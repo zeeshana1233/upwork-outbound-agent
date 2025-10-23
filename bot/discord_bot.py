@@ -1052,7 +1052,7 @@ async def run_scrapers_concurrently():
     while True:
         # Run both monitors truly concurrently
         await asyncio.gather(
-            run_advanced_job_searches(),
+            # run_advanced_job_searches(),
             bhw_monitor_async()
         )
         await asyncio.sleep(5)  # Update every 5 seconds as requested
