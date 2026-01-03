@@ -611,7 +611,29 @@ class UpworkScraper:
 
     def fetch_jobs(self, query="", limit=10, delay=True, filters=None):
         from .job_search import fetch_jobs
-        return fetch_jobs(self, query, limit, delay, filters)
+        import asyncio
+        import sys
+        
+        # Since fetch_jobs is async, we need to run it
+        # Check if we're on Windows and set the appropriate event loop policy
+        if sys.platform == 'win32':
+            try:
+                asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
+            except:
+                pass
+        
+        # Check if there's already a running event loop
+        try:
+            loop = asyncio.get_running_loop()
+            # If we're here, there's already a loop running
+            # We can't use asyncio.run() in this case
+            # Instead, we need to create a task
+            import nest_asyncio
+            nest_asyncio.apply()
+            return asyncio.run(fetch_jobs(self, query, limit, delay, filters))
+        except RuntimeError:
+            # No running loop, we can use asyncio.run()
+            return asyncio.run(fetch_jobs(self, query, limit, delay, filters))
 
     def debug_job_ids(self, jobs_data):
         from .job_search import debug_job_ids

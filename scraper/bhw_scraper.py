@@ -349,11 +349,11 @@ Description: {description}"""
                     continue
                 print(f"    [BHW] Thread not in database - fetching details...")
                 description = self.get_thread_description(detail_scraper, full_url, thread_id)
-                print(f"    [BHW] Filtering with Gemini AI...")
-                gemini_decision, is_relevant = self.filter_thread_with_gemini(title, description)
-                print(f"    [BHW] Gemini decision: {gemini_decision}")
-                # Store ALL threads regardless of Gemini decision
-                print(f"    [BHW] Storing thread with Gemini decision: {gemini_decision}")
+                # print(f"    [BHW] Filtering with Gemini AI...")
+                # gemini_decision, is_relevant = self.filter_thread_with_gemini(title, description)
+                # print(f"    [BHW] Gemini decision: {gemini_decision}")
+                # # Store ALL threads regardless of Gemini decision
+                # print(f"    [BHW] Storing thread with Gemini decision: {gemini_decision}")
                 # Store in DB
                 db_thread = BHWThread(
                     link=full_url,
@@ -369,7 +369,7 @@ Description: {description}"""
                     post_content=description,
                     replies_count=replies,
                     views_count=views,
-                    gemini_decision=gemini_decision if gemini_decision else ("Yes" if is_relevant else "No")
+                    gemini_decision="Yes"
                 )
                 session.add(db_thread)
                 session.commit()
@@ -385,17 +385,17 @@ Description: {description}"""
                     "last_poster": last_poster,
                     "page_found": page,
                     "description": description,
-                    "gemini_decision": gemini_decision
+                    # "gemini_decision": gemini_decision
                 }
                 threads_data.append(thread_data)
                 stats['new_processed'] += 1
-                if is_relevant:
-                    print(f"    [BHW] Thread stored - Gemini APPROVED ({len(description)} chars)")
-                else:
-                    print(f"    [BHW] Thread stored - Gemini REJECTED ({len(description)} chars)")
-                if i < len(thread_cards):
-                    print(f"    [BHW] Waiting {config.BHW_DETAIL_DELAY}s before next thread...")
-                    time.sleep(config.BHW_DETAIL_DELAY)
+                # if is_relevant:
+                #     print(f"    [BHW] Thread stored - Gemini APPROVED ({len(description)} chars)")
+                # else:
+                #     print(f"    [BHW] Thread stored - Gemini REJECTED ({len(description)} chars)")
+                # if i < len(thread_cards):
+                #     print(f"    [BHW] Waiting {config.BHW_DETAIL_DELAY}s before next thread...")
+                #     time.sleep(config.BHW_DETAIL_DELAY)
         finally:
             session.close()
         print(f"[BHW] Page {page} Statistics:")
