@@ -23,54 +23,26 @@ jobs:
           timeout: 180s
           command_timeout: 10m
           script: |
-            set -ex
             APP_DIR="/opt/upwork-outbound-agent"
-
             echo "▶ Starting deployment..."
-            ls -la "$APP_DIR" || echo "Dir does not exist yet"
-
-            # ── Pull latest code ──────────────────────────────────────────
-            if [ ! -d "$APP_DIR" ]; then
-              echo "▶ First deploy — cloning repo..."
-              git clone -b bhw_bot https://github.com/zeeshana1233/upwork-outbound-agent.git "$APP_DIR"
-            else
-              echo "▶ Pulling latest code..."
-              cd "$APP_DIR"
-              git remote -v
-              git fetch origin bhw_bot
-              git reset --hard origin/bhw_bot
-            fi
-
+            test -d "$APP_DIR" && echo "▶ Repo exists, pulling..." || git clone -b bhw_bot https://github.com/zeeshana1233/upwork-outbound-agent.git "$APP_DIR"
             cd "$APP_DIR"
-
-            # ── Python venv & deps ────────────────────────────────────────
-            if [ ! -d "$APP_DIR/venv" ]; then
-              python3 -m venv venv
-            fi
-            . venv/bin/activate
+            git fetch origin bhw_bot
+            git reset --hard origin/bhw_bot
+            test -d "$APP_DIR/venv" || python3 -m venv "$APP_DIR/venv"
+            . "$APP_DIR/venv/bin/activate"
             pip install --upgrade pip -q
             pip install -r requirements.txt -q
             echo "▶ Dependencies installed"
-
-            # ── Write .env from secret ────────────────────────────────────
             printf '%s\n' "$ENV_FILE_CONTENT" > "$APP_DIR/.env"
             chmod 600 "$APP_DIR/.env"
             echo "▶ .env written"
-
-            # ── Install / reload systemd service ──────────────────────────
             cp "$APP_DIR/deploy/upwork-bot.service" /etc/systemd/system/upwork-bot.service
             systemctl daemon-reload
             systemctl enable upwork-bot.service
             systemctl restart upwork-bot.service
-            echo "▶ Service restarted"
-
-            # ── Quick health check ────────────────────────────────────────
+            echo "▶ Service restarted, waiting 8s..."
             sleep 8
-            if systemctl is-active --quiet upwork-bot.service; then
-              echo "✅ Bot is running!"
-              journalctl -u upwork-bot.service -n 20 --no-pager
-            else
-              echo "❌ Bot failed to start. Logs:"
-              journalctl -u upwork-bot.service -n 50 --no-pager
-              exit 1
-            fi
+            systemctl is-active upwork-bot.service
+            echo "✅ Bot is running!"
+            journalctl -u upwork-bot.service -n 20 --no-pager
