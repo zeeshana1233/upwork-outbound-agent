@@ -10,10 +10,18 @@ def save_jobs_to_db(jobs_data):
     try:
         session = SessionLocal()
         saved_count = 0
+        skipped_count = 0
         for job in jobs_data:
             try:
+                job_id = job["id"]
+
+                # Skip jobs already stored — avoids UniqueViolation on the job_id index
+                if session.query(Job.id).filter_by(job_id=job_id).first():
+                    skipped_count += 1
+                    continue
+
                 job_fields = {
-                    "job_id": job["id"],
+                    "job_id": job_id,
                     "title": job["title"],
                     "budget": job["budget_numeric"],
                     "client": job["client"]
@@ -24,24 +32,20 @@ def save_jobs_to_db(jobs_data):
                     column_names = [column.name for column in mapper.columns]
                     if 'description' in column_names:
                         job_fields["description"] = job["description"]
-                    else:
-                        print(f"Job model doesn't have 'description' field. Available fields: {column_names}")
-                except Exception as e:
-                    print(f"Could not check Job model fields: {e}")
-                db_job = Job(**job_fields)
-                session.merge(db_job)
+                except Exception:
+                    pass
+                session.add(Job(**job_fields))
                 saved_count += 1
             except Exception as e:
-                print(f"Error saving job to DB: {e}")
-                print(f"Job data: {job.get('id', 'Unknown')} - {job.get('title', 'No title')}")
-                print(f"Available Job model fields: {list(Job.__table__.columns.keys())}")
+                print(f"Error saving job to DB: {e} | {job.get('id', '?')} - {job.get('title', 'No title')}")
+                session.rollback()
                 continue
         session.commit()
         session.close()
-        print(f"Saved {saved_count} jobs to database")
+        if saved_count:
+            print(f"Saved {saved_count} new jobs to database ({skipped_count} already existed)")
     except Exception as e:
         print(f"Database error: {e}")
-        print(f"Job model columns: {list(Job.__table__.columns.keys()) if hasattr(Job, '__table__') else 'Unknown'}")
         if 'session' in locals():
             session.rollback()
             session.close()

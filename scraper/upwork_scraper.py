@@ -199,6 +199,10 @@ class UpworkScraper:
                 fresh_tokens = self._extract_tokens_from_response(response)
                 if fresh_tokens:
                     print("Successfully bootstrapped fresh session!")
+                    # If bootstrap didn't find a new OAuth2 token, keep the old one
+                    if not self.current_auth_token and old_auth_token:
+                        self.current_auth_token = old_auth_token
+                        self.visitor_topnav_gql_token = old_visitor_token
                     return True
                     
             # Try backup bootstrap URLs
@@ -224,6 +228,10 @@ class UpworkScraper:
                         fresh_tokens = self._extract_tokens_from_response(response)
                         if fresh_tokens:
                             print(f"Successfully bootstrapped from {url}")
+                            # If bootstrap didn't find a new OAuth2 token, keep the old one
+                            if not self.current_auth_token and old_auth_token:
+                                self.current_auth_token = old_auth_token
+                                self.visitor_topnav_gql_token = old_visitor_token
                             return True
                             
                     time.sleep(random.uniform(2, 4))
@@ -261,8 +269,15 @@ class UpworkScraper:
                         self.base_headers['Vnd-Eo-Visitorid'] = cookie.value
                         self.browser_cookies['visitor_id'] = cookie.value
                         found_tokens = True
-                        
-                    elif any(token_key in cookie.name.lower() for token_key in ['oauth', 'token', 'universalsearch']):
+
+                    elif cookie.name.upper() == 'XSRF-TOKEN':
+                        # CSRF token — store in cookies so _get_current_headers can forward it.
+                        # Never use as Authorization bearer — it's not an OAuth2 token.
+                        self.browser_cookies['XSRF-TOKEN'] = cookie.value
+                        found_tokens = True
+
+                    elif cookie.value.startswith('oauth2v2_'):
+                        # Only actual OAuth2 tokens become the Authorization bearer
                         self.current_auth_token = cookie.value
                         self.visitor_topnav_gql_token = cookie.value
                         self.browser_cookies['UniversalSearchNuxt_vt'] = cookie.value
@@ -603,38 +618,21 @@ class UpworkScraper:
         """Get current headers with latest tokens and authorization"""
         headers = self.base_headers.copy()
         
-        # Add authorization header
+        # Add authorization header (visitor OAuth2 token)
         if self.current_auth_token:
             headers['Authorization'] = f'Bearer {self.current_auth_token}'
+
+        # Upwork requires the XSRF-TOKEN cookie value in the X-Csrf-Token header for all POSTs
+        xsrf = self.browser_cookies.get('XSRF-TOKEN') or self.browser_cookies.get('xsrf-token')
+        if xsrf:
+            headers['X-Csrf-Token'] = xsrf
             
         return headers
 
-    def fetch_jobs(self, query="", limit=10, delay=True, filters=None):
+    async def fetch_jobs(self, query="", limit=10, delay=True, filters=None):
+        """Async wrapper — properly awaits the async job_search.fetch_jobs coroutine."""
         from .job_search import fetch_jobs
-        import asyncio
-        import sys
-        
-        # Since fetch_jobs is async, we need to run it
-        # Check if we're on Windows and set the appropriate event loop policy
-        if sys.platform == 'win32':
-            try:
-                asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
-            except:
-                pass
-        
-        # Check if there's already a running event loop
-        try:
-            loop = asyncio.get_running_loop()
-            # If we're here, there's already a loop running
-            # We can't use asyncio.run() in this case
-            # Instead, we need to create a task
-            import nest_asyncio
-            nest_asyncio.apply()
-            return asyncio.run(fetch_jobs(self, query, limit, delay, filters))
-        except RuntimeError:
-            # No running loop, we can use asyncio.run()
-            return asyncio.run(fetch_jobs(self, query, limit, delay, filters))
-
+        return await fetch_jobs(self, query, limit, delay, filters)
     def debug_job_ids(self, jobs_data):
         from .job_search import debug_job_ids
         return debug_job_ids(jobs_data)

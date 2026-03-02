@@ -93,22 +93,27 @@ def filter_jobs_by_criteria(jobs_data, filters=None):
     if not jobs_data:
         return jobs_data
     
-    # Keywords to exclude (case-insensitive)
-    excluded_keywords = ['n8n', 'hubspot']
+    # Keywords to exclude from title, description, and skills (case-insensitive)
+    excluded_keywords = [
+        # Chatbot / AI assistant noise — not our service
+        'chatbot', 'chat bot', 'chatgpt bot', 'ai chatbot', 'llm chatbot',
+        'customer support bot', 'support chatbot', 'conversational ai',
+        # QA / Testing noise — we build automation tools, not test suites
+        'qa automation', 'test automation', 'unit test', 'e2e test', 'end-to-end test',
+        'quality assurance', 'manual testing', 'automated testing',
+        # Unrelated tools
+        'hubspot', 'salesforce', 'marketo',
+        # Data science / ML that gets caught by generic automation terms
+        'machine learning', 'mlops', 'data pipeline',
+    ]
     
     filtered_jobs = []
     excluded_count = 0
     
     for job in jobs_data:
-        # Check payment verification if available in job data
-        # Note: Visitor API may not provide this information
-        if filters and filters.get("payment_verified"):
-            payment_verified = job.get('client', {}).get('paymentVerified') if isinstance(job.get('client'), dict) else None
-            if payment_verified is False:
-                excluded_count += 1
-                print(f"Excluded job '{job.get('title', 'Unknown')}' - Client payment not verified")
-                continue
-            # If payment_verified is None, we can't determine status, so we allow it through
+        # Payment verification: the visitor search API does NOT return this field.
+        # All payment-unverified jobs are filtered in discord_bot.fetch_and_build_job_message
+        # after fetching full job details, where the data is actually available.
         
         # Check experience level filter (must be intermediate or expert)
         experience_level = job.get('experience_level', '').lower()
@@ -134,30 +139,72 @@ def filter_jobs_by_criteria(jobs_data, filters=None):
                 break
         
         if not should_exclude:
+            # --- BUDGET FLOOR FILTER ---
+            # Skip jobs where a fixed budget is explicitly set below $200
+            # (hourly jobs without a budget cap are always allowed through)
+            raw_budget = job.get('budget')
+            if raw_budget is not None:
+                try:
+                    budget_value = float(str(raw_budget).replace('$', '').replace(',', '').strip())
+                    if budget_value < 200:
+                        excluded_count += 1
+                        print(f"Excluded job '{job.get('title', 'Unknown')}' - Budget too low: ${budget_value}")
+                        continue
+                except (ValueError, TypeError):
+                    pass  # Can't parse budget, allow the job through
+
             filtered_jobs.append(job)
     
     print(f"Filtered jobs: {len(filtered_jobs)} kept, {excluded_count} excluded")
     return filtered_jobs
 
 import json
+import asyncio as _asyncio
+
+# Semaphore: at most 5 concurrent Upwork API requests at a time.
+# Prevents flooding the API and avoids event-loop contention.
+_upwork_semaphore = _asyncio.Semaphore(5)
+
+# Token-refresh lock: only one task may refresh tokens at a time.
+# Prevents 25 parallel tasks from all hammering the Upwork homepage
+# simultaneously when they all hit 401, causing 429 rate-limits.
+_token_refresh_lock = _asyncio.Lock()
+
 async def make_graphql_request(scraper, payload, method_name):
     max_retries = 3
     retry_count = 0
     while retry_count < max_retries:
         try:
             scraper._generate_session_ids()
-            response = scraper.scraper.post(
-                scraper.GRAPHQL_URL,
-                headers=scraper._get_current_headers(),
-                cookies=scraper._get_current_cookies(),
-                data=json.dumps(payload),
-                timeout=30
-            )
+            # Snapshot headers/cookies in the main async thread BEFORE entering executor
+            headers  = scraper._get_current_headers()
+            cookies  = scraper._get_current_cookies()
+            url      = scraper.GRAPHQL_URL
+            data_str = json.dumps(payload)
+            # Run the blocking cloudscraper POST in a thread-pool executor so it
+            # does NOT block the asyncio event loop for other concurrent tasks.
+            loop = _asyncio.get_event_loop()
+            async with _upwork_semaphore:
+                response = await loop.run_in_executor(
+                    None,
+                    lambda: scraper.scraper.post(
+                        url,
+                        headers=headers,
+                        cookies=cookies,
+                        data=data_str,
+                        timeout=30
+                    )
+                )
             print(f"{method_name} Response Status: {response.status_code}")
             if response.status_code in [401, 403]:
+                print(f"[DEBUG 401/403] Response body: {response.text[:300]}")
+                print(f"[DEBUG 401/403] Request headers sent: Authorization={headers.get('Authorization','<none>')[:30]}... X-Csrf-Token={headers.get('X-Csrf-Token','<none>')[:20]}...")
                 print(f"Authentication error detected, refreshing tokens...")
                 if retry_count < max_retries - 1:
-                    success = scraper._refresh_tokens()
+                    # Only one task at a time may refresh tokens to avoid thundering herd
+                    async with _token_refresh_lock:
+                        # Another task may have already refreshed; re-check if tokens changed
+                        success = scraper._refresh_tokens()
                     if success:
                         retry_count += 1
                         print(f"Retrying request with fresh tokens (attempt {retry_count + 1})")

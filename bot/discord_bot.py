@@ -58,13 +58,21 @@ async def fetch_and_build_job_message(job, search_context=""):
                 
                 print(f"[Real-time] ✅ Job details fetched successfully")
             else:
-                print(f"[Real-time] ⚠️ No job details returned")
+                print(f"[Real-time] ⚠️ No job details returned — cannot verify payment, skipping")
+                return None
                 
         except asyncio.TimeoutError:
-            print(f"[Real-time] ⏰ Job details request timed out")
+            print(f"[Real-time] ⏰ Job details request timed out — cannot verify payment, skipping")
+            return None
         except Exception as detail_error:
-            print(f"[Real-time] ❌ Error fetching job details: {detail_error}")
-    
+            print(f"[Real-time] ❌ Error fetching job details: {detail_error} — cannot verify payment, skipping")
+            return None
+
+    # Cannot verify payment without job details — skip
+    if not job_details_response or not isinstance(job_details_response, dict):
+        print(f"[Real-time] ⚠️ Job details unavailable — cannot verify payment, skipping '{job.get('title','?')[:50]}'")
+        return None
+
     # ADD DETAILED INFORMATION TO THE MESSAGE
     if job_details_response and isinstance(job_details_response, dict):
         job_msg += "\n\n**📋 DETAILED JOB INFORMATION:**\n"
@@ -149,9 +157,18 @@ async def fetch_and_build_job_message(job, search_context=""):
         job_msg += f"\nTotal Spent: {spent_display}"
         
         payment_verified = job_details_response.get('payment_verified', False)
-        job_msg += f"\nPayment Verified: {'Yes' if payment_verified else 'No'}"
+        job_msg += f"\nPayment Verified: {'Yes ✅' if payment_verified else 'No ❌'}"
         job_msg += "\n```"
         job_msg += "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n"
+
+        # ── PAYMENT VERIFICATION GATE ────────────────────────────────────────
+        # Visitor search API never returns payment_verified data, so we must
+        # check it here after fetching job details. Return None to discard
+        # the job — process_single_search treats None as a reason to skip.
+        if not payment_verified:
+            print(f"[Real-time] ⛔ Skipping job '{job.get('title','?')[:50]}' — client payment NOT verified")
+            return None
+        # ────────────────────────────────────────────────────────────────────
 
     return job_msg
 
@@ -299,7 +316,12 @@ import traceback
 # Map: (keyword_name, search_query, channel_id)
 from .job_search_keywords import ADVANCED_JOB_SEARCHES
 
-bot = commands.Bot(command_prefix="!", intents=discord.Intents.all())
+# Only request the intents this bot actually needs.
+# The message-reading commands are all commented out, so no privileged intents
+# (Members / Message Content) are required — default is enough.
+_intents = discord.Intents.default()
+_intents.message_content = False   # not reading user messages
+bot = commands.Bot(command_prefix="!", intents=_intents)
 scraper = UpworkScraper()
 
 # --- UNIQUE JOBS TRACKER ---
@@ -1049,6 +1071,21 @@ async def bhw_monitor_async():
 
 async def run_scrapers_concurrently():
     await bot.wait_until_ready()
+
+    # ── One-time startup bootstrap ──────────────────────────────────────────
+    # Bootstrap a fresh visitor_gql_token ONCE before launching 25 parallel
+    # tasks.  Without this, all tasks start with a stale hardcoded token,
+    # immediately get 401, and then all hammer the Upwork homepage
+    # simultaneously → 429 rate-limit → nobody gets a fresh token.
+    print("[Startup] Bootstrapping fresh Upwork session before first scan...")
+    loop = asyncio.get_event_loop()
+    bootstrap_ok = await loop.run_in_executor(None, scraper._bootstrap_fresh_session)
+    if bootstrap_ok and scraper.current_auth_token:
+        print(f"[Startup] ✅ Fresh token acquired: {scraper.current_auth_token[:30]}...")
+    else:
+        print("[Startup] ⚠️  Bootstrap did not return a fresh OAuth2 token — will retry on first 401.")
+    # ── End startup bootstrap ───────────────────────────────────────────────
+
     while True:
         # Run both monitors truly concurrently
         await asyncio.gather(

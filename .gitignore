@@ -3,32 +3,28 @@ __pycache__/
 *.py[cod]
 *$py.class
 *.so
-.Python
 .venv/
 venv/
 ENV/
 env/
 
-# Environment variables
+# Secrets / credentials
 .env
-
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Cookies and auth
 *.json
-!requirements.txt
+
+# Runtime data
+seen_threads.json
+downloaded_files/
+_debug/
 
 # Database
 *.db
 *.sqlite
 
-# Downloaded files
-downloaded_files/
+# IDE / OS
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
