@@ -53,8 +53,8 @@ main.py
 
 ```bash
 # 1. Clone
-git clone git@github.com:zeeshana1233/upwork-discord-bot.git
-cd upwork-discord-bot
+git clone git@github.com:zeeshana1233/upwork-outbound-agent.git
+cd upwork-outbound-agent
 
 # 2. Install dependencies
 pip install -r requirements.txt
