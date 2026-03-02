@@ -49,13 +49,7 @@ async def fetch_and_build_job_message(job, search_context=""):
                 timeout=45
             )
             
-            if job_details_response:
-                if isinstance(job_details_response, dict):
-                    title = job_details_response.get('title', '')
-                    if 'Authentication Required' in title or 'authentication error' in title.lower():
-                        print(f"[Real-time] ⚠️ Job details fetch failed due to auth - skipping this job")
-                        return None
-                
+            if job_details_response and isinstance(job_details_response, dict):
                 print(f"[Real-time] ✅ Job details fetched successfully")
             else:
                 print(f"[Real-time] ⚠️ No job details returned — cannot verify payment, skipping")

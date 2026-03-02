@@ -100,7 +100,7 @@ class UpworkScraper:
 
     async def fetch_job_details(self, job_id):
         from .job_details import fetch_job_details
-        return fetch_job_details(self, job_id)
+        return await fetch_job_details(self, job_id)
 
     def _get_simplified_job_details_query(self, job_id):
         from .job_details import get_simplified_job_details_query
