@@ -1,0 +1,26 @@
+[Unit]
+Description=Upwork Outbound Agent Discord Bot
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/upwork-outbound-agent
+ExecStart=/opt/upwork-outbound-agent/venv/bin/python3 main.py
+Restart=always
+RestartSec=10
+EnvironmentFile=/opt/upwork-outbound-agent/.env
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=upwork-bot
+
+# Hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ReadWritePaths=/opt/upwork-outbound-agent
+
+[Install]
+WantedBy=multi-user.target

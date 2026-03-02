@@ -1,0 +1,66 @@
+name: Deploy to Contabo
+
+on:
+  push:
+    branches: [bhw_bot]
+
+jobs:
+  deploy:
+    name: Deploy Bot
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          password: ${{ secrets.SERVER_PASSWORD }}
+          script_stop: true
+          timeout: 120s
+          script: |
+            set -e
+            APP_DIR="/opt/upwork-outbound-agent"
+
+            # ── First-time setup ──────────────────────────────────────────
+            if [ ! -d "$APP_DIR" ]; then
+              echo "▶ First deploy — cloning repo..."
+              git clone -b bhw_bot https://github.com/zeeshana1233/upwork-outbound-agent.git "$APP_DIR"
+              cd "$APP_DIR"
+              python3 -m venv venv
+              source venv/bin/activate
+              pip install --upgrade pip
+              pip install -r requirements.txt
+            else
+              echo "▶ Pulling latest code..."
+              cd "$APP_DIR"
+              git fetch origin bhw_bot
+              git reset --hard origin/bhw_bot
+              source venv/bin/activate
+              pip install -r requirements.txt
+            fi
+
+            # ── Write .env from secret ────────────────────────────────────
+            echo "${{ secrets.ENV_FILE }}" > "$APP_DIR/.env"
+            chmod 600 "$APP_DIR/.env"
+
+            # ── Ensure PostgreSQL database exists ─────────────────────────
+            sudo -u postgres psql -tc "SELECT 1 FROM pg_database WHERE datname='upwork_jobs'" \
+              | grep -q 1 || sudo -u postgres createdb upwork_jobs
+
+            # ── Install / reload systemd service ──────────────────────────
+            cp "$APP_DIR/deploy/upwork-bot.service" /etc/systemd/system/upwork-bot.service
+            systemctl daemon-reload
+            systemctl enable upwork-bot.service
+            systemctl restart upwork-bot.service
+
+            # ── Quick health check ────────────────────────────────────────
+            sleep 5
+            if systemctl is-active --quiet upwork-bot.service; then
+              echo "✅ Bot is running!"
+              journalctl -u upwork-bot.service -n 15 --no-pager
+            else
+              echo "❌ Bot failed to start. Logs:"
+              journalctl -u upwork-bot.service -n 40 --no-pager
+              exit 1
+            fi
