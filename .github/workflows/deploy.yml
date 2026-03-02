@@ -23,10 +23,11 @@ jobs:
           timeout: 180s
           command_timeout: 10m
           script: |
-            set -e
+            set -ex
             APP_DIR="/opt/upwork-outbound-agent"
 
             echo "▶ Starting deployment..."
+            ls -la "$APP_DIR" || echo "Dir does not exist yet"
 
             # ── Pull latest code ──────────────────────────────────────────
             if [ ! -d "$APP_DIR" ]; then
@@ -35,6 +36,7 @@ jobs:
             else
               echo "▶ Pulling latest code..."
               cd "$APP_DIR"
+              git remote -v
               git fetch origin bhw_bot
               git reset --hard origin/bhw_bot
             fi
@@ -45,7 +47,7 @@ jobs:
             if [ ! -d "$APP_DIR/venv" ]; then
               python3 -m venv venv
             fi
-            source venv/bin/activate
+            . venv/bin/activate
             pip install --upgrade pip -q
             pip install -r requirements.txt -q
             echo "▶ Dependencies installed"
