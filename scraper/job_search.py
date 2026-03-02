@@ -116,16 +116,16 @@ def filter_jobs_by_criteria(jobs_data, filters=None):
         # after fetching full job details, where the data is actually available.
         
         # Check experience level filter (must be intermediate or expert)
-        experience_level = job.get('experience_level', '').lower()
+        experience_level = (job.get('experience_level') or '').lower()
         if experience_level not in ['2', '3', 'intermediate', 'expert', 'intermediatelevel', 'expertlevel']:
             excluded_count += 1
             print(f"Excluded job '{job.get('title', 'Unknown')}' - Experience level: {experience_level}")
             continue
         
         # Check for excluded keywords in title, description, and skills
-        title = job.get('title', '').lower()
-        description = job.get('description', '').lower()
-        skills = [skill.lower() for skill in job.get('skills', [])]
+        title = (job.get('title') or '').lower()
+        description = (job.get('description') or '').lower()
+        skills = [(skill or '').lower() for skill in (job.get('skills') or [])]
         
         # Check if any excluded keyword appears in title, description, or skills
         should_exclude = False
