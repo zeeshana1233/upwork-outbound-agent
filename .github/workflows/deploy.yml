@@ -2,7 +2,7 @@ name: Deploy to Windows Server
 
 on:
   push:
-    branches: [bhw_bot]
+    branches: [main]
 
 jobs:
   deploy:
@@ -21,8 +21,8 @@ jobs:
           command_timeout: 15m
           script: |
             cd C:\upwork-outbound-agent
-            git fetch origin bhw_bot
-            git reset --hard origin/bhw_bot
+            git fetch origin main
+            git reset --hard origin/main
             python -m pip install "requests-toolbelt>=1.0.0" --prefer-binary -q
             python -m pip install --prefer-binary -r requirements.txt -q
             sc stop upwork-outbound-agent || echo Service was not running
