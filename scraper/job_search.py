@@ -66,7 +66,7 @@ async def fetch_jobs(scraper, query, limit=100, delay=True, filters=None):
     }
     
     if delay:
-        await asyncio.sleep(2)
+        await asyncio.sleep(random.uniform(0.5, 1.5))
     
     jobs_data = await make_graphql_request(scraper, graphql_payload, "VisitorJobSearch")
     
@@ -76,8 +76,8 @@ async def fetch_jobs(scraper, query, limit=100, delay=True, filters=None):
         filtered_jobs = filter_jobs_by_criteria(jobs_data, filters)
         return filtered_jobs
     
-    print("First attempt failed, trying minimal search...")
-    return await try_minimal_search(scraper, query, limit, delay, filters)
+    # No results from main query — return empty (skip slow fallback)
+    return []
 
 def debug_job_ids(jobs_data):
     # This function is already imported and used as a helper, so just return as is
@@ -359,14 +359,9 @@ def extract_jobs_from_response(data, method_name):
         for i, job_result in enumerate(results):
             try:
                 if not job_result:
-                    print(f"Empty job result at index {i}")
                     continue
-                if i == 0:
-                    print(f"First job result structure:")
-                    print(json.dumps(job_result, indent=2)[:1000])
-                    print("Available fields:", list(job_result.keys()))
                 job_tile = job_result.get("jobTile", {})
-                job_details = job_tile.get("job", {}) if job_tile else {}
+                job_details = (job_tile.get("job", {}) if job_tile else {}) or {}
                 job_ciphertext = job_details.get("ciphertext") or job_details.get("cipherText")
                 fallback_id = job_result.get("id", f"job_{i}")
                 job_id = job_ciphertext or job_details.get("id") or fallback_id

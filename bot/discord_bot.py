@@ -38,36 +38,24 @@ async def fetch_and_build_job_message(job, search_context=""):
         f"**Found by keyword:** `{search_context}` \n"
     )
     
-    # FETCH JOB DETAILS (with auto auth refresh)
+    # FETCH JOB DETAILS (single attempt, short timeout — visitor API often lacks permissions)
     job_details_response = None
     if job_id:
         try:
-            print(f"[Real-time] Fetching details for job ID: {job_id}")
-            
             job_details_response = await asyncio.wait_for(
-                scraper.fetch_job_details(job_id),
-                timeout=45
+                scraper.fetch_job_details(job_id, max_retries=1),
+                timeout=10
             )
             
             if job_details_response and isinstance(job_details_response, dict):
-                print(f"[Real-time] ✅ Job details fetched successfully")
+                print(f"[Real-time] ✅ Job details fetched for '{job.get('title', '?')[:40]}'")
             else:
-                print(f"[Real-time] ⚠️ No job details returned — cannot verify payment, skipping")
-                return None
+                pass  # Will post with basic info
                 
-        except asyncio.TimeoutError:
-            print(f"[Real-time] ⏰ Job details request timed out — cannot verify payment, skipping")
-            return None
-        except Exception as detail_error:
-            print(f"[Real-time] ❌ Error fetching job details: {detail_error} — cannot verify payment, skipping")
-            return None
+        except (asyncio.TimeoutError, Exception):
+            pass  # Will post with basic info
 
-    # Cannot verify payment without job details — skip
-    if not job_details_response or not isinstance(job_details_response, dict):
-        print(f"[Real-time] ⚠️ Job details unavailable — cannot verify payment, skipping '{job.get('title','?')[:50]}'")
-        return None
-
-    # ADD DETAILED INFORMATION TO THE MESSAGE
+    # ADD DETAILED INFORMATION TO THE MESSAGE (if available)
     if job_details_response and isinstance(job_details_response, dict):
         job_msg += "\n\n**📋 DETAILED JOB INFORMATION:**\n"
         
@@ -155,13 +143,9 @@ async def fetch_and_build_job_message(job, search_context=""):
         job_msg += "\n```"
         job_msg += "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n"
 
-        # ── PAYMENT VERIFICATION GATE ────────────────────────────────────────
-        # Visitor search API never returns payment_verified data, so we must
-        # check it here after fetching job details. Return None to discard
-        # the job — process_single_search treats None as a reason to skip.
+        # ── PAYMENT VERIFICATION INFO ────────────────────────────────────────
         if not payment_verified:
-            print(f"[Real-time] ⛔ Skipping job '{job.get('title','?')[:50]}' — client payment NOT verified")
-            return None
+            print(f"[Real-time] ⚠️ Job '{job.get('title','?')[:50]}' — client payment NOT verified")
         # ────────────────────────────────────────────────────────────────────
 
     return job_msg
@@ -191,10 +175,10 @@ async def process_single_search(search):
         jobs = await scraper.fetch_jobs(query=search["query"], limit=10, delay=True, filters=filters)
         
         if not jobs:
+            print(f"[Real-time] No jobs returned for '{search['keyword']}'")
             return
 
-        # REAL-TIME LOGIC: Post ANY job we haven't seen before AND was posted within 5 minutes
-        # Filter by both "not seen" and "posted within 5 minutes"
+        # Post jobs that are NEW (not seen before) AND posted within the last 5 minutes
         new_jobs = []
         for job in jobs:
             job_id = job.get('id')
@@ -203,22 +187,23 @@ async def process_single_search(search):
             if job_id and job_id in sent_job_ids:
                 continue
             
-            # Check if job was posted within the last 5 minutes
+            # Mark as seen regardless (so we don't re-check old jobs next cycle)
+            if job_id:
+                sent_job_ids.add(job_id)
+            
+            # Only post if posted within the last 5 minutes
             if not is_job_posted_within_minutes(job.get('createdDateTime'), 5):
-                print(f"[Real-time] Skipping job '{job.get('title', 'Unknown')[:30]}...' - posted more than 5 minutes ago")
                 continue
             
-            # This is a new job we haven't seen before AND was posted within 5 minutes
+            # New job posted within 5 minutes
             if job_id:
                 new_jobs.append(job)
-                sent_job_ids.add(job_id)  # Mark as seen immediately
-                print(f"[Real-time] Found new job within 5 minutes: '{job.get('title', 'Unknown')[:30]}...'")
+                print(f"[Real-time] Found new job (< 5 min): '{job.get('title', 'Unknown')[:40]}...'")
         
         if not new_jobs:
-            # No new jobs found in this search that were posted within 5 minutes
             return
         
-        print(f"[Real-time] Found {len(new_jobs)} NEW jobs posted within 5 minutes for keyword: {search['keyword']}")
+        print(f"[Real-time] Found {len(new_jobs)} NEW jobs (< 5 min) for keyword: {search['keyword']}")
 
         # Post new jobs (limit to 3 per search cycle to avoid spam)
         posted_count = 0
@@ -247,13 +232,13 @@ async def process_single_search(search):
             try:
                 await channel.send(complete_message)
                 posted_count += 1
-                print(f"[Real-time] Posted NEW job (within 5 min): {job.get('title', 'Unknown')[:50]}...")
+                print(f"[Real-time] Posted NEW job: {job.get('title', 'Unknown')[:50]}...")
                 await asyncio.sleep(2)  # Rate limit protection
             except Exception as post_error:
                 print(f"[Real-time] Error posting message: {post_error}")
             
         if posted_count > 0:
-            print(f"[Real-time] Posted {posted_count} new jobs (within 5 min) for: {search['keyword']}")
+            print(f"[Real-time] Posted {posted_count} new jobs for: {search['keyword']}")
             
     except Exception as e:
         error_msg = f"Error in real-time job detection for **{search['keyword']}**: {e}"
@@ -268,32 +253,42 @@ async def process_single_search(search):
 
 async def run_advanced_job_searches():
     """
-    Run all job searches concurrently - OPTIMIZED FOR REAL-TIME DETECTION
-    Checks frequently to catch new jobs as soon as they're posted within 5 minutes
+    Run job searches in small batches to balance speed vs rate-limiting.
+    Processes 5 keywords concurrently per batch, with a short pause between batches.
     """
     await bot.wait_until_ready()
-    print("[Real-time] Starting REAL-TIME job monitoring system...")
-    print("[Real-time] Jobs will be posted as soon as they appear on Upwork (within 5 minutes)")
+    print(f"[Real-time] Starting job monitoring cycle ({len(ADVANCED_JOB_SEARCHES)} keywords)...")
     
-    # Create tasks for all searches
-    search_tasks = []
-    for search in ADVANCED_JOB_SEARCHES:
-        task = asyncio.create_task(process_single_search(search))
-        search_tasks.append(task)
+    success_count = 0
+    error_count = 0
+    batch_size = 5
     
-    # Run all searches concurrently
-    print(f"[Real-time] Running {len(search_tasks)} searches in real-time mode...")
+    for batch_start in range(0, len(ADVANCED_JOB_SEARCHES), batch_size):
+        batch = ADVANCED_JOB_SEARCHES[batch_start:batch_start + batch_size]
+        batch_num = (batch_start // batch_size) + 1
+        
+        # Run batch concurrently
+        tasks = [asyncio.create_task(process_single_search(s)) for s in batch]
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        
+        for j, result in enumerate(results):
+            if isinstance(result, Exception):
+                error_count += 1
+                err_str = str(result)
+                kw = batch[j]['keyword']
+                if '429' in err_str:
+                    print(f"[Real-time] Rate-limited on '{kw}', backing off")
+                    await asyncio.sleep(15)
+                else:
+                    print(f"[Real-time] Error in '{kw}': {result}")
+            else:
+                success_count += 1
+        
+        # Brief pause between batches to avoid rate limits
+        if batch_start + batch_size < len(ADVANCED_JOB_SEARCHES):
+            await asyncio.sleep(random.uniform(3, 5))
     
-    # Use gather with return_exceptions to prevent one failure from stopping others
-    results = await asyncio.gather(*search_tasks, return_exceptions=True)
-    
-    # Log any errors
-    for i, result in enumerate(results):
-        if isinstance(result, Exception):
-            search = ADVANCED_JOB_SEARCHES[i]
-            print(f"[Real-time] Error in search '{search['keyword']}': {result}")
-    
-    print(f"[Real-time] Completed scan of {len(search_tasks)} keywords")
+    print(f"[Real-time] Completed scan: {success_count} OK, {error_count} errors")
 
 import discord
 from discord.ext import commands, tasks
@@ -302,6 +297,7 @@ from scraper.bhw_scraper import post_new_bhw_threads
 from config import DISCORD_TOKEN, DISCORD_CHANNEL_ID, UPWORK_EMAIL, UPWORK_PASSWORD,DISCORD_CHANNEL_ID2
 import asyncio
 import re
+import random
 
 from datetime import datetime
 import traceback
@@ -1081,9 +1077,10 @@ async def run_scrapers_concurrently():
     # ── End startup bootstrap ───────────────────────────────────────────────
 
     while True:
-        # Run both monitors truly concurrently
+        # Run job searches then wait before next cycle
         await asyncio.gather(
             run_advanced_job_searches()
             # bhw_monitor_async()
         )
-        await asyncio.sleep(5)  # Update every 5 seconds as requested
+        print("[Real-time] Waiting 1 minute before next scan cycle...")
+        await asyncio.sleep(60)  # Wait 1 minute between full cycles
