@@ -1,6 +1,6 @@
 # 📋 Project Log — Upwork Outbound Sales Agent
 
-> Last updated: 2026-03-02
+> Last updated: 2026-03-04
 
 ---
 
@@ -83,14 +83,15 @@ main.py
 ## ✅ What's Working
 
 - [x] Upwork visitor GraphQL API integration (no login required)
-- [x] Concurrent polling of 20+ keyword searches every 5 seconds
+- [x] Batched concurrent polling — 5 keywords at a time, ~90s per full 25-keyword scan
 - [x] Real-time detection (5-minute freshness window)
-- [x] Duplicate prevention (in-memory set + PostgreSQL)
+- [x] Duplicate prevention (in-memory `sent_job_ids` set — marks ALL seen IDs regardless of age)
 - [x] Rich Discord Embed messages with job details
 - [x] Multiple Discord channels — each keyword category posts to its own channel
-- [x] `payment_verified=True` filter
 - [x] `contractor_tier` filter (Intermediate + Expert only, post-processing)
 - [x] BHW forum scraper (built, currently disabled/commented out)
+- [x] Deployed as Windows Service (NSSM) on `38.242.198.21` — survives reboots
+- [x] GitHub Actions CI/CD — every push to `main` auto-deploys to server in ~10s
 
 ---
 
@@ -98,9 +99,9 @@ main.py
 
 - **Too much noise** — the keyword approach is too broad. Queries like `"bot"`, `"selenium"`, `"zapier"` return many irrelevant jobs
 - **No semantic understanding** — a job titled "Instagram bot removal" matches the "bot" keyword even though it's not a lead
-- **In-memory dedup only survives one session** — `sent_job_ids` is a Python `set()`, so it resets on bot restart (PostgreSQL helps but only for jobs that were stored)
-- **Hardcoded auth tokens** — `current_auth_token` and `current_visitor_id` are hardcoded strings in `upwork_scraper.py` and will expire
-- **No logging/alerting on errors** — errors are printed to console but not persisted
+- **In-memory dedup resets on restart** — `sent_job_ids` is a Python `set()`, so it resets on bot restart (PostgreSQL dedup is broken on current server — `jobs.job_id` column missing)
+- **DB dedup non-functional on Windows server** — `Error saving job to DB: column jobs.job_id does not exist`. Non-blocking but dedup doesn't persist across restarts
+- **No logging/alerting on errors** — errors written to `C:\upwork-outbound-agent\logs\error.log` on server but no alerting
 
 ---
 
@@ -139,6 +140,64 @@ main.py
 - Created `KEYWORD_APPROACH.md` — detailed explanation of how keyword filtering works
 - Identified main problem: keyword queries are too broad → too much noise
 - Agreed next action: polish keyword list before adding AI layer
+
+### 2026-03-03–04 — Session 3 (Server migration, bug fixes, CI/CD)
+
+**🧹 Cleanup**
+- Stopped and deleted bot from old Contabo server (`173.212.215.140`) — service removed, `/opt/upwork-outbound-agent` deleted
+
+**✅ Fix 1 — Rate limiting (Cloudflare 429s)** (`bot/discord_bot.py`)
+- Root cause: all 25 keywords fired concurrently → Cloudflare blocked every request
+- Fix: changed to batches of 5 concurrent searches with 3–5s delay between batches
+- Added `asyncio.Semaphore(5)` in scraper layer
+- Result: scan cycle dropped from ~6 min to ~90s, zero 429s
+
+**✅ Fix 2 — Payment verification gate blocking all jobs** (`bot/discord_bot.py`)
+- Root cause: `fetch_job_details` always fails with OAuth2 permission error (visitor API limitation) → all jobs were silently skipped
+- Fix: removed hard gate; now posts with basic info if details are unavailable; payment check is a warning only
+
+**✅ Fix 3 — 5-minute time filter (re-added correctly)** (`bot/discord_bot.py`)
+- Old bug: jobs marked as seen ONLY if they passed the time filter → same old jobs re-evaluated every cycle
+- New logic: ALL job IDs marked seen immediately (prevent re-checking), THEN check `is_job_posted_within_minutes(..., 5)` before posting
+- `is_job_posted_within_minutes()` handles ISO 8601 `Z`-suffix strings, Unix timestamps, and datetime objects
+
+**✅ Fix 4 — Speed optimisation** (multiple files)
+- Removed `try_minimal_search` fallback — was doubling requests, always failing for empty results
+- Reduced pre-search random delay: `0.5–1.5s` (was `2s`)
+- Reduced `fetch_job_details` retries: `max_retries=1`, `timeout=10s` (was 3 retries, 45s)
+- Reduced scan cycle wait: `60s` (was `180s`)
+- Removed verbose per-job JSON dump logging
+
+**✅ Fix 5 — Windows Unicode crash** (server-side NSSM config)
+- Root cause: emoji characters in `print()` statements (e.g. `✅`, `⚠️`) crash on Windows CP1252 encoding
+- Fix: set `PYTHONIOENCODING=utf-8` + `PYTHONUNBUFFERED=1` in NSSM service environment — no code changes needed
+
+**✅ Fix 6 — `job_details` null safety** (`scraper/job_search.py`)
+- `job_details = job_tile.get("job", {}) or {}` — guards against API returning explicit `null` for `job` field
+
+**🚀 Deployment — Windows Desktop Server**
+- Server: `38.242.198.21` (Windows, RDP)
+- Deployed to `C:\upwork-outbound-agent`
+- Installed as Windows Service via NSSM (`C:\nssm-2.24-101-g897c7ad\win64\nssm.exe`)
+- Service name: `upwork-outbound-agent`
+- Logs: `C:\upwork-outbound-agent\logs\output.log` and `error.log`
+- Existing `bhw-bot` (Node.js, Windows Service) left untouched and running
+- Both services confirmed `STATE: 4 RUNNING`
+
+**⚙️ CI/CD Pipeline** (`.github/workflows/deploy.yml`)
+- Trigger: every push to `main` branch
+- Runner: `ubuntu-latest` → SSH into Windows server via `appleboy/ssh-action@v1.2.0`
+- Steps: `git reset --hard origin/main` → `pip install` → `sc stop` → `sc start` → `sc query`
+- Fixed Windows incompatibility: removed `envs:` / `export` (not supported by cmd.exe)
+- Deploy time: ~10–14 seconds
+- GitHub Secrets set: `SERVER_HOST`, `SERVER_USER`, `SERVER_PASSWORD`, `ENV_FILE`
+
+**🌿 Branch rename**
+- `bhw_bot` → `main` (to avoid confusion with the unrelated `bhw-bot` Node.js project on the server)
+- Old `bhw_bot` branch deleted locally and on GitHub
+- `main` set as default branch on `zeeshana1233/upwork-outbound-agent`
+
+---
 
 ### 2026-03-02 — Session 2 (Phase 1 execution)
 
