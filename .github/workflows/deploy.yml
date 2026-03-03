@@ -1,4 +1,4 @@
-name: Deploy to Contabo
+name: Deploy to Windows Server
 
 on:
   push:
@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Deploy via SSH
+      - name: Deploy via SSH to Windows
         uses: appleboy/ssh-action@v1.2.0
         env:
           ENV_FILE_CONTENT: ${{ secrets.ENV_FILE }}
@@ -20,29 +20,17 @@ jobs:
           password: ${{ secrets.SERVER_PASSWORD }}
           envs: ENV_FILE_CONTENT
           script_stop: true
-          timeout: 180s
-          command_timeout: 10m
+          timeout: 300s
+          command_timeout: 15m
           script: |
-            APP_DIR="/opt/upwork-outbound-agent"
-            echo "▶ Starting deployment..."
-            test -d "$APP_DIR" && echo "▶ Repo exists, pulling..." || git clone -b bhw_bot https://github.com/zeeshana1233/upwork-outbound-agent.git "$APP_DIR"
-            cd "$APP_DIR"
+            cd C:\upwork-outbound-agent
             git fetch origin bhw_bot
             git reset --hard origin/bhw_bot
-            test -d "$APP_DIR/venv" || python3 -m venv "$APP_DIR/venv"
-            . "$APP_DIR/venv/bin/activate"
-            pip install --upgrade pip -q
-            pip install -r requirements.txt -q
-            echo "▶ Dependencies installed"
-            printf '%s\n' "$ENV_FILE_CONTENT" > "$APP_DIR/.env"
-            chmod 600 "$APP_DIR/.env"
-            echo "▶ .env written"
-            cp "$APP_DIR/deploy/upwork-bot.service" /etc/systemd/system/upwork-bot.service
-            systemctl daemon-reload
-            systemctl enable upwork-bot.service
-            systemctl restart upwork-bot.service
-            echo "▶ Service restarted, waiting 8s..."
-            sleep 8
-            systemctl is-active upwork-bot.service
-            echo "✅ Bot is running!"
-            journalctl -u upwork-bot.service -n 20 --no-pager
+            python -m pip install "requests-toolbelt>=1.0.0" --prefer-binary -q
+            python -m pip install --prefer-binary -r requirements.txt -q
+            python -c "import os; content=os.environ.get('ENV_FILE_CONTENT',''); open('.env','w').write(content) if content else None; print('ENV written' if content else 'Skipped - no ENV_FILE_CONTENT')"
+            sc stop upwork-outbound-agent
+            ping -n 5 127.0.0.1
+            sc start upwork-outbound-agent
+            ping -n 12 127.0.0.1
+            sc query upwork-outbound-agent
