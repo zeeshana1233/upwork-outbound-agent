@@ -12,13 +12,10 @@ jobs:
     steps:
       - name: Deploy via SSH to Windows
         uses: appleboy/ssh-action@v1.2.0
-        env:
-          ENV_FILE_CONTENT: ${{ secrets.ENV_FILE }}
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           password: ${{ secrets.SERVER_PASSWORD }}
-          envs: ENV_FILE_CONTENT
           script_stop: true
           timeout: 300s
           command_timeout: 15m
@@ -28,8 +25,7 @@ jobs:
             git reset --hard origin/bhw_bot
             python -m pip install "requests-toolbelt>=1.0.0" --prefer-binary -q
             python -m pip install --prefer-binary -r requirements.txt -q
-            python -c "import os; content=os.environ.get('ENV_FILE_CONTENT',''); open('.env','w').write(content) if content else None; print('ENV written' if content else 'Skipped - no ENV_FILE_CONTENT')"
-            sc stop upwork-outbound-agent
+            sc stop upwork-outbound-agent || echo Service was not running
             ping -n 5 127.0.0.1
             sc start upwork-outbound-agent
             ping -n 12 127.0.0.1
