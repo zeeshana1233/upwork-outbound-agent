@@ -78,7 +78,11 @@ async def fetch_job_details(scraper, job_id, max_retries=3):
             if "errors" in data:
                 for err in data["errors"]:
                     print(f"[Job Details] GraphQL error: {err.get('message', '?')}")
-                if not data.get("data"):
+                raw_data = data.get("data") or {}
+                if raw_data and raw_data.get("jobPubDetails"):
+                    print("[Job Details] ⚠ Partial data available alongside errors — attempting parse")
+                else:
+                    print(f"[Job Details] Raw response keys: {list(data.keys())} | data keys: {list(raw_data.keys()) if raw_data else 'none'}")
                     return None
 
             details = extract_job_details_from_response(data)
@@ -96,9 +100,84 @@ async def fetch_job_details(scraper, job_id, max_retries=3):
     return None
 
 def get_simplified_job_details_query(job_id):
+    """
+    Visitor-only query — requests ONLY fields accessible without OAuth2.
+    Removed: buyer.stats, qualifications, buyerExtra (all require privileged scope).
+    Kept:    opening.* (fully public), buyer.location, buyer.jobs.openCount.
+    """
+    VISITOR_QUERY = """
+    query JobPubDetailsQuery($id: ID!) {
+        jobPubDetails(id: $id) {
+            opening {
+                status
+                postedOn
+                publishTime
+                workload
+                contractorTier
+                description
+                info {
+                    ciphertext
+                    id
+                    type
+                    title
+                    createdOn
+                    premium
+                }
+                sandsData {
+                    ontologySkills {
+                        id
+                        prefLabel
+                    }
+                    additionalSkills {
+                        id
+                        prefLabel
+                    }
+                }
+                category {
+                    name
+                }
+                categoryGroup {
+                    name
+                }
+                budget {
+                    amount
+                    currencyCode
+                }
+                engagementDuration {
+                    label
+                    weeks
+                }
+                extendedBudgetInfo {
+                    hourlyBudgetMin
+                    hourlyBudgetMax
+                    hourlyBudgetType
+                }
+                clientActivity {
+                    totalApplicants
+                    totalHired
+                    totalInvitedToInterview
+                    numberOfPositionsToHire
+                }
+                tools {
+                    name
+                }
+            }
+            buyer {
+                location {
+                    city
+                    country
+                    countryTimezone
+                }
+                jobs {
+                    openCount
+                }
+            }
+        }
+    }
+    """
     return {
         "alias": "gql-query-get-visitor-job-details",
-        "query": """query JobPubDetailsQuery($id: ID!) {\n                jobPubDetails(id: $id) {\n                    opening {\n                        status\n                        postedOn\n                        publishTime\n                        workload\n                        contractorTier\n                        description\n                        info {\n                            ciphertext\n                            id\n                            type\n                            title\n                            createdOn\n                            premium\n                        }\n                        sandsData {\n                            ontologySkills {\n                                id\n                                prefLabel\n                            }\n                            additionalSkills {\n                                id\n                                prefLabel\n                            }\n                        }\n                        category {\n                            name\n                        }\n                        categoryGroup {\n                            name\n                        }\n                        budget {\n                            amount\n                            currencyCode\n                        }\n                        engagementDuration {\n                            label\n                            weeks\n                        }\n                        extendedBudgetInfo {\n                            hourlyBudgetMin\n                            hourlyBudgetMax\n                            hourlyBudgetType\n                        }\n                        clientActivity {\n                            totalApplicants\n                            totalHired\n                            totalInvitedToInterview\n                            numberOfPositionsToHire\n                        }\n                        tools {\n                            name\n                        }\n                    }\n                    buyer {\n                        location {\n                            city\n                            country\n                            countryTimezone\n                        }\n                        stats {\n                            totalAssignments\n                            feedbackCount\n                            score\n                            totalJobsWithHires\n                            totalCharges {\n                                amount\n                                currencyCode\n                            }\n                            hoursCount\n                        }\n                        jobs {\n                            openCount\n                        }\n                    }\n                    qualifications {\n                        minJobSuccessScore\n                        minOdeskHours\n                        prefEnglishSkill\n                        risingTalent\n                        shouldHavePortfolio\n                    }\n                    buyerExtra {\n                        isPaymentMethodVerified\n                    }\n                }\n            }""",
+        "query": VISITOR_QUERY,
         "variables": {
             "id": job_id
         }
@@ -115,50 +194,38 @@ def extract_job_details_from_response(data):
                 "title": data.get("data", {}).get("title") or data.get("title", "No title"),
                 "description": "No details available."
             }
-        
-        opening = job_pub_details.get("opening") or {}
-        buyer = job_pub_details.get("buyer") or {}
-        qualifications = job_pub_details.get("qualifications") or {}
-        buyer_extra = job_pub_details.get("buyerExtra") or {}
-        similar_jobs = job_pub_details.get("similarJobs") or []
-        info = opening.get("info") or {}
-        extended_budget = opening.get("extendedBudgetInfo") or {}
-        client_activity = opening.get("clientActivity") or {}
-        category = opening.get("category") or {}
-        category_group = opening.get("categoryGroup") or {}
-        budget_info = opening.get("budget") or {}
+
+        opening          = job_pub_details.get("opening") or {}
+        buyer            = job_pub_details.get("buyer") or {}
+        info             = opening.get("info") or {}
+        extended_budget  = opening.get("extendedBudgetInfo") or {}
+        client_activity  = opening.get("clientActivity") or {}
+        category         = opening.get("category") or {}
+        category_group   = opening.get("categoryGroup") or {}
+        budget_info      = opening.get("budget") or {}
         engagement_duration = opening.get("engagementDuration") or {}
-        sands_data = opening.get("sandsData") or {}
-        buyer_location = buyer.get("location") or {}
-        buyer_stats = buyer.get("stats") or {}
-        buyer_company = buyer.get("company") or {}
-        buyer_jobs = buyer.get("jobs") or {}
-        
-        # Handle total_charges
-        total_charges = buyer_stats.get("totalCharges", {})
-        client_total_spent_value = None
-        if total_charges and isinstance(total_charges, dict):
-            client_total_spent_value = total_charges.get("amount")
-        
-        # Extract skills
+        sands_data       = opening.get("sandsData") or {}
+        buyer_location   = buyer.get("location") or {}
+        buyer_jobs       = buyer.get("jobs") or {}
+
+        # ── Skills: merge additionalSkills + ontologySkills (deduplicated) ──
+        seen_skills = set()
         skills = []
-        additional_skills = sands_data.get("additionalSkills") or []
-        for skill in additional_skills:
-            if skill and skill.get("prefLabel"):
-                skills.append(skill["prefLabel"])
-        ontology_skills = sands_data.get("ontologySkills") or []
-        for skill in ontology_skills:
-            if skill and skill.get("prefLabel"):
-                skills.append(skill["prefLabel"])
-        
-        # Format budget
+        for section in ("additionalSkills", "ontologySkills"):
+            for skill in (sands_data.get(section) or []):
+                label = (skill or {}).get("prefLabel", "")
+                if label and label not in seen_skills:
+                    seen_skills.add(label)
+                    skills.append(label)
+
+        # ── Budget ──────────────────────────────────────────────────────────
         budget_display = "Not specified"
         hourly_min = extended_budget.get("hourlyBudgetMin")
         hourly_max = extended_budget.get("hourlyBudgetMax")
         budget_amount = budget_info.get("amount")
         try:
             if budget_amount and float(budget_amount) > 0:
-                budget_display = f"${budget_amount:,.0f}"
+                budget_display = f"${float(budget_amount):,.0f}"
             elif hourly_min and float(hourly_min) > 0:
                 if hourly_max and float(hourly_max) > 0:
                     budget_display = f"${hourly_min}-${hourly_max}/hr"
@@ -166,89 +233,86 @@ def extract_job_details_from_response(data):
                     budget_display = f"${hourly_min}+/hr"
         except Exception:
             pass
-        
-        # Format location
+
+        # ── Client location ─────────────────────────────────────────────────
         client_location_str = "Not specified"
         if buyer_location.get("city") and buyer_location.get("country"):
             client_location_str = f"{buyer_location['city']}, {buyer_location['country']}"
         elif buyer_location.get("country"):
-            client_location_str = buyer_location['country']
-        
-        # Format posted time
+            client_location_str = buyer_location["country"]
+
+        # ── Posted time ─────────────────────────────────────────────────────
         posted_on = opening.get("postedOn", "")
         if posted_on:
             try:
-                posted_date = datetime.fromisoformat(posted_on.replace('Z', '+00:00'))
+                posted_date = datetime.fromisoformat(posted_on.replace("Z", "+00:00"))
                 posted_time = posted_date.strftime("%Y-%m-%d %H:%M UTC")
-            except:
+            except Exception:
                 posted_time = posted_on
         else:
             posted_time = "Unknown"
-        
+
         job_details = {
-            "id": info.get("id"),
-            "ciphertext": info.get("ciphertext"),
-            "title": info.get("title"),
-            "description": opening.get("description"),
-            "status": opening.get("status"),
-            "posted_on": posted_time,
-            "publish_time": opening.get("publishTime"),
-            "workload": opening.get("workload"),
-            "contractor_tier": opening.get("contractorTier"),
-            "job_type": info.get("type"),
-            "budget": budget_display,
-            "budget_amount": budget_amount,
-            "hourly_budget_min": hourly_min,
-            "hourly_budget_max": hourly_max,
-            "budget_type": extended_budget.get("hourlyBudgetType"),
-            "currency_code": budget_info.get("currencyCode"),
-            "engagement_duration": engagement_duration.get("label"),
-            "engagement_weeks": engagement_duration.get("weeks"),
-            "deliverables": opening.get("deliverables"),
-            "deadline": opening.get("deadline"),
-            "category": category.get("name"),
-            "category_group": category_group.get("name"),
-            "skills": skills,
-            "total_applicants": client_activity.get("totalApplicants"),
-            "total_hired": client_activity.get("totalHired"),
-            "total_interviewed": client_activity.get("totalInvitedToInterview"),
-            "positions_to_hire": client_activity.get("numberOfPositionsToHire"),
-            "client_location": client_location_str,
-            "client_country": buyer_location.get("country"),
-            "client_timezone": buyer_location.get("countryTimezone"),
-            "client_total_assignments": buyer_stats.get("totalAssignments"),
-            "client_active_assignments": buyer_stats.get("activeAssignmentsCount"),
-            "client_hours": buyer_stats.get("hoursCount"),
-            "client_feedback_count": buyer_stats.get("feedbackCount"),
-            "client_rating": buyer_stats.get("score"),
-            "client_total_jobs": buyer_stats.get("totalJobsWithHires"),
-            "client_total_spent": client_total_spent_value,
-            "client_open_jobs": buyer_jobs.get("openCount"),
-            "client_industry": buyer_company.get("profile", {}).get("industry") if buyer_company.get("profile") else None,
-            "client_company_size": buyer_company.get("profile", {}).get("size") if buyer_company.get("profile") else None,
-            "payment_verified": buyer_extra.get("isPaymentMethodVerified"),
-            "min_job_success_score": qualifications.get("minJobSuccessScore"),
-            "min_hours": qualifications.get("minOdeskHours"),
-            "min_hours_week": qualifications.get("minHoursWeek"),
-            "english_requirement": qualifications.get("prefEnglishSkill"),
-            "rising_talent": qualifications.get("risingTalent"),
-            "portfolio_required": qualifications.get("shouldHavePortfolio"),
-            "tools": [tool.get("name", "") for tool in opening.get("tools", [])],
-            "similar_jobs_count": len(similar_jobs) if similar_jobs else None,
-            "annotations": opening.get("annotations"),
-            "segmentation_data": opening.get("segmentationData"),
-            "qualifications": qualifications,
-            "similar_jobs": similar_jobs[:5] if similar_jobs else []
+            # ── Identity ──────────────────────────────────────────────────
+            "id":                   info.get("id"),
+            "ciphertext":           info.get("ciphertext"),
+            "title":                info.get("title"),
+            # ── Content ───────────────────────────────────────────────────
+            "description":          opening.get("description"),
+            "status":               opening.get("status"),
+            "posted_on":            posted_time,
+            "publish_time":         opening.get("publishTime"),
+            "workload":             opening.get("workload"),
+            "contractor_tier":      opening.get("contractorTier"),
+            "job_type":             info.get("type"),
+            # ── Budget ────────────────────────────────────────────────────
+            "budget":               budget_display,
+            "budget_amount":        budget_amount,
+            "hourly_budget_min":    hourly_min,
+            "hourly_budget_max":    hourly_max,
+            "budget_type":          extended_budget.get("hourlyBudgetType"),
+            "currency_code":        budget_info.get("currencyCode"),
+            # ── Duration ──────────────────────────────────────────────────
+            "engagement_duration":  engagement_duration.get("label"),
+            "engagement_weeks":     engagement_duration.get("weeks"),
+            # ── CATEGORY (key for Module 3) ───────────────────────────────
+            "category":             category.get("name"),       # e.g. "Web Development"
+            "category_group":       category_group.get("name"), # e.g. "Engineering & Technology"
+            # ── Skills & Tools ────────────────────────────────────────────
+            "skills":               skills,
+            "tools":                [t.get("name", "") for t in (opening.get("tools") or [])],
+            # ── Activity ──────────────────────────────────────────────────
+            "total_applicants":     client_activity.get("totalApplicants"),
+            "total_hired":          client_activity.get("totalHired"),
+            "total_interviewed":    client_activity.get("totalInvitedToInterview"),
+            "positions_to_hire":    client_activity.get("numberOfPositionsToHire"),
+            # ── Client (visitor-accessible fields only) ───────────────────
+            "client_location":      client_location_str,
+            "client_country":       buyer_location.get("country"),
+            "client_timezone":      buyer_location.get("countryTimezone"),
+            "client_open_jobs":     buyer_jobs.get("openCount"),
+            # ── OAuth2-restricted fields — always None (visitor API) ──────
+            "payment_verified":     None,   # requires OAuth2 — skipped
+            "client_total_spent":   None,   # requires OAuth2 — skipped
+            "client_rating":        None,   # requires OAuth2 — skipped
+            "client_feedback_count": None,  # requires OAuth2 — skipped
+            "client_total_assignments": None,
+            "client_total_jobs":    None,
+            "client_hours":         None,
+            "min_job_success_score": None,
+            "english_requirement":  None,
+            "rising_talent":        None,
+            "portfolio_required":   None,
         }
-        
+
         return job_details
-        
+
     except Exception as e:
         print(f"[Job Details] ❌ Error extracting job details: {e}")
         import traceback
         traceback.print_exc()
         return {
-            "id": data.get("data", {}).get("id") or data.get("id", ""),
-            "title": data.get("data", {}).get("title") or data.get("title", "No title"),
+            "id":          data.get("data", {}).get("id") or data.get("id", ""),
+            "title":       data.get("data", {}).get("title") or data.get("title", "No title"),
             "description": f"Error: {e}"
         }

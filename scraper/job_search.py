@@ -12,13 +12,6 @@ async def fetch_jobs(scraper, query, limit=100, delay=True, filters=None):
     if not filters:
         filters = {}
     
-    # Ensure payment verification is always required
-    filters["payment_verified"] = True
-    
-    # Ensure experience level is intermediate or expert
-    if "contractor_tier" not in filters:
-        filters["contractor_tier"] = ["2", "3"]  # Intermediate and Expert
-    
     if filters:
         print(f"  Filters applied: {filters}")
     
@@ -36,16 +29,6 @@ async def fetch_jobs(scraper, query, limit=100, delay=True, filters=None):
     
     # ADD FILTERS IF PROVIDED
     if filters:
-        # Note: contractor_tier filtering is done in post-processing only
-        # The visitor API doesn't support reliable contractor tier filtering
-        if "contractor_tier" in filters and filters["contractor_tier"]:
-            print(f"  - Contractor Tier: Will be filtered in post-processing")
-        
-        # Note: clientPaymentVerificationStatus is not supported by visitor API
-        # Payment verification will be filtered in post-processing
-        if "payment_verified" in filters and filters["payment_verified"]:
-            print(f"  - Payment Verified: Will be filtered in post-processing")
-        
         if "job_type" in filters and filters["job_type"]:
             # Map job types to Upwork's correct enum format
             job_type_map = {
@@ -111,17 +94,6 @@ def filter_jobs_by_criteria(jobs_data, filters=None):
     excluded_count = 0
     
     for job in jobs_data:
-        # Payment verification: the visitor search API does NOT return this field.
-        # All payment-unverified jobs are filtered in discord_bot.fetch_and_build_job_message
-        # after fetching full job details, where the data is actually available.
-        
-        # Check experience level filter (must be intermediate or expert)
-        experience_level = (job.get('experience_level') or '').lower()
-        if experience_level not in ['2', '3', 'intermediate', 'expert', 'intermediatelevel', 'expertlevel']:
-            excluded_count += 1
-            print(f"Excluded job '{job.get('title', 'Unknown')}' - Experience level: {experience_level}")
-            continue
-        
         # Check for excluded keywords in title, description, and skills
         title = (job.get('title') or '').lower()
         description = (job.get('description') or '').lower()
@@ -370,7 +342,7 @@ def extract_jobs_from_response(data, method_name):
                     continue
                 print(f"Job {i}: Using ID '{job_id}' (ciphertext: {bool(job_ciphertext)})")
                 title = job_result.get("title", "No title")
-                description = job_result.get("description", "No description")[:1000]
+                description = job_result.get("description", "No description")
                 job_type = job_details.get("jobType", "")
                 hourly_min = job_details.get("hourlyBudgetMin")
                 hourly_max = job_details.get("hourlyBudgetMax")
@@ -400,12 +372,25 @@ def extract_jobs_from_response(data, method_name):
                 contractor_tier = job_details.get("contractorTier", "")
                 skills = job_result.get("ontologySkills", [])
                 skill_names = [skill.get("prettyName", "") for skill in skills if skill.get("prettyName")]
+                raw_category = job_result.get("category") or {}
+                raw_category_group = job_result.get("categoryGroup") or {}
+                # NOTE: category/categoryGroup are NOT in search results type —
+                # they are only available from the job-details API.
+                # We store None here; discord_bot will fill it from fetch_job_details.
+                category_name = raw_category.get("name") or None
+                category_group_name = raw_category_group.get("name") or None
+                publish_time = job_details.get("publishTime", "")
+                sourcing_ts = job_details.get("sourcingTimestamp", "")
+                engagement_duration = job_details.get("hourlyEngagementDuration") or {}
+                fixed_duration = job_details.get("fixedPriceEngagementDuration") or {}
+                duration_label = engagement_duration.get("label") or fixed_duration.get("label")
                 job_data = {
                     "id": job_id,
                     "title": title,
                     "description": description,
                     "createdDateTime": create_time,
-                    "client": "Unknown",
+                    "publishTime": publish_time,
+                    "sourcingTimestamp": sourcing_ts,
                     "budget": budget_display,
                     "budget_numeric": budget_numeric,
                     "total_applicants": 0,
@@ -414,11 +399,12 @@ def extract_jobs_from_response(data, method_name):
                     "hourly_max": hourly_max,
                     "weekly_budget": weekly_budget,
                     "duration": None,
-                    "duration_label": None,
+                    "duration_label": duration_label,
                     "engagement": job_type,
                     "experience_level": contractor_tier,
                     "applied": False,
-                    "category": ", ".join(skill_names[:3]),
+                    "category": category_name,
+                    "category_group": category_group_name,
                     "job_type": job_type,
                     "skills": skill_names
                 }

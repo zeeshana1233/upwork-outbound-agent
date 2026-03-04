@@ -11,9 +11,6 @@ async def fetch_and_build_job_message(job, search_context=""):
     job_id = job.get('id') or job.get('ciphertext')
     job_url = build_job_url(job_id)
     skills = job.get('skills', [])
-    skill_display = " • ".join(skills[:8])
-    if len(skills) > 8:
-        skill_display += f" • +{len(skills) - 8} more"
     
     # Get formatted posting time for display
     posted_time = format_posted_time(job.get('createdDateTime'))
@@ -22,16 +19,27 @@ async def fetch_and_build_job_message(job, search_context=""):
     # Use a proper UTC, timezone-aware detection timestamp
     detected_utc = datetime.now(timezone.utc)
     detected_time_str = detected_utc.strftime('%H:%M')
+    # Discord hard limit is 2000 chars per message.
+    # Keep description to 800 chars max so the rest of the message fits.
+    # The FULL description is always stored in the database.
+    DISCORD_DESC_LIMIT = 800
+    raw_desc = job.get('description') or ''
+    discord_desc = raw_desc[:DISCORD_DESC_LIMIT] + ('...' if len(raw_desc) > DISCORD_DESC_LIMIT else '')
+
     job_msg = (
         f"🚨** JOB ALERT** \n"
         f"**{job['title']}** \n"
-        f"{job['description'][:350] + '...' if len(job['description']) > 350 else job['description']}\n"
+        f"{discord_desc}\n"
         f"\n"
         f"**Budget:** {job.get('budget', 'N/A')}\n"
         f"**Posted on Upwork**: {posted_time} \n"
         f"**Detected at:** {detected_time_str} UTC\n"
     )
+    # Skills — show up to 15 tags, remainder shown as count
     if skills:
+        skill_display = ' • '.join(skills[:15])
+        if len(skills) > 15:
+            skill_display += f' • +{len(skills) - 15} more'
         job_msg += f"**Key Skills:** `{skill_display}`\n"
     job_msg += (
         f"[Open Job]({job_url})\n"
@@ -122,31 +130,7 @@ async def fetch_and_build_job_message(job, search_context=""):
             if proposals_display:
                 job_msg += f"\nProposals: {proposals_display}"
         job_msg += "\n```\n"
-        
-        job_msg += "**CLIENT INFORMATION:**\n```"
-        if job_details_response.get('client_location'):
-            job_msg += f"\nLocation: {job_details_response['client_location']}"
-        
-        client_total_spent = job_details_response.get('client_total_spent')
-        if client_total_spent is not None and client_total_spent != "":
-            try:
-                spent_amount = float(client_total_spent)
-                spent_display = f"${spent_amount:,.0f}" if spent_amount > 0 else "$0"
-            except (ValueError, TypeError):
-                spent_display = str(client_total_spent)
-        else:
-            spent_display = "Not disclosed"
-        job_msg += f"\nTotal Spent: {spent_display}"
-        
-        payment_verified = job_details_response.get('payment_verified', False)
-        job_msg += f"\nPayment Verified: {'Yes ✅' if payment_verified else 'No ❌'}"
-        job_msg += "\n```"
         job_msg += "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n"
-
-        # ── PAYMENT VERIFICATION INFO ────────────────────────────────────────
-        if not payment_verified:
-            print(f"[Real-time] ⚠️ Job '{job.get('title','?')[:50]}' — client payment NOT verified")
-        # ────────────────────────────────────────────────────────────────────
 
     return job_msg
 
@@ -344,8 +328,10 @@ def build_job_details_embed(job_details):
         )
     
     # Create main title and description
+    # Embed description cap: 4096 chars (Discord limit), use 800 for readability
     title = f"📋 {job_details.get('title', 'Job Details')}"
-    description = job_details.get('description', 'No description available')[:40] + ("..." if len(job_details.get('description', '')) > 40 else "")
+    _raw_desc = job_details.get('description', 'No description available')
+    description = _raw_desc[:800] + ('...' if len(_raw_desc) > 800 else '')
     
     # Build embed with each field as inline and a gap between fields
     embed = discord.Embed(
@@ -360,9 +346,6 @@ def build_job_details_embed(job_details):
         embed.add_field(name="💰 Budget", value=job_details['budget'], inline=True)
     # if job_details.get('contractor_tier'):
     #     embed.add_field(name="📊 Contractor Tier", value=job_details['contractor_tier'], inline=True)
-    if job_details.get('client_location', 'Unknown') != 'Unknown':
-        embed.add_field(name="📍 Client Location", value=job_details['client_location'], inline=True)
-
     embed.add_field(name="", value="", inline=False)  # gap
 
     # Project details
@@ -385,43 +368,8 @@ def build_job_details_embed(job_details):
 
     embed.add_field(name="", value="", inline=False)
 
-    # About the client
-    # if job_details.get('client_country'):
-    #     embed.add_field(name="🌍 Client Country", value=job_details['client_country'], inline=True)
-    # if job_details.get('client_timezone'):
-    #     embed.add_field(name="🕒 Client Timezone", value=job_details['client_timezone'], inline=True)
-    
-    # FIX: Properly handle client_total_spent with better formatting
-    client_total_spent = job_details.get('client_total_spent')
-    if client_total_spent is not None and client_total_spent != "":
-        try:
-            spent_amount = float(client_total_spent)
-            if spent_amount > 0:
-                spent_display = f"${spent_amount:,.0f}"
-            else:
-                spent_display = "$0"
-        except (ValueError, TypeError):
-            spent_display = str(client_total_spent)
-    else:
-        spent_display = "Not disclosed"
-    
-    embed.add_field(name="💸 Total Spent", value=spent_display, inline=True)
-    
-    # if job_details.get('client_hours'):
-    #     embed.add_field(name="⏰ Client Hours", value=f"{job_details['client_hours']:,.0f}", inline=True)
-    # if job_details.get('client_total_jobs'):
-    #     embed.add_field(name="📋 Jobs Posted", value=job_details['client_total_jobs'], inline=True)
-    # if job_details.get('client_rating'):
-    #     rating = f"{job_details['client_rating']:.1f}/5"
-    #     feedback_count = job_details.get('client_feedback_count')
-    #     if feedback_count:
-    #         rating += f" ({feedback_count} reviews)"
-    #     embed.add_field(name="⭐ Client Rating", value=rating, inline=True)
-    embed.add_field(name="✅ Payment Verified" if job_details.get('payment_verified', False) else "❌ Payment Verified", value="Yes" if job_details.get('payment_verified', False) else "No", inline=True)
-    if job_details.get('client_industry'):
-        embed.add_field(name="🏢 Industry", value=job_details['client_industry'], inline=True)
-    if job_details.get('client_company_size'):
-        embed.add_field(name="👥 Company Size", value=job_details['client_company_size'], inline=True)
+    # Client fields removed — all client info (location, spent, payment_verified)
+    # requires OAuth2 (jobPubDetails returns ExecutionAborted for visitor tokens)
 
     embed.add_field(name="", value="", inline=False)
 
