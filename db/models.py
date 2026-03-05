@@ -15,6 +15,42 @@ class Job(Base):
     skills = Column(Text)
     client = Column(String)
     posted_at = Column(DateTime, default=datetime.datetime.utcnow)
+    # MERIDIAN scoring columns (nullable — NULL means not yet processed)
+    meridian_score   = Column(Integer,  nullable=True)
+    meridian_verdict = Column(String,   nullable=True)
+    meridian_reasoning = Column(Text,   nullable=True)
+    meridian_run_at  = Column(DateTime, nullable=True)
+
+
+class PastJob(Base):
+    """Reference corpus for MERIDIAN scoring."""
+    __tablename__ = "past_jobs"
+    id              = Column(Integer,  primary_key=True, autoincrement=True)
+    title           = Column(String,   nullable=False)
+    description     = Column(Text,     nullable=True)
+    category        = Column(String,   nullable=False, index=True)
+    skills          = Column(Text,     nullable=True)   # JSON list stored as text
+    budget          = Column(Float,    nullable=True)
+    job_type        = Column(String,   nullable=True)   # 'hourly' | 'fixed'
+    experience_level= Column(String,   nullable=True)
+    outcome         = Column(String,   nullable=True)   # won/completed/interested/passed/lost
+    weight          = Column(Float,    default=1.0)
+    source          = Column(String,   default="manual")
+    reference_url   = Column(String,   nullable=True)
+    created_at      = Column(DateTime, default=datetime.datetime.utcnow)
+
+
+class MeridianCostLog(Base):
+    """Per-cycle GPT cost log for WhatsApp finance reports."""
+    __tablename__ = "meridian_cost_log"
+    id              = Column(Integer,  primary_key=True, autoincrement=True)
+    cycle_at        = Column(DateTime, default=datetime.datetime.utcnow)
+    jobs_scored     = Column(Integer,  default=0)
+    input_tokens    = Column(Integer,  default=0)
+    output_tokens   = Column(Integer,  default=0)
+    cost_usd        = Column(Float,    default=0.0)
+    cost_pkr        = Column(Float,    default=0.0)
+    session_total_pkr = Column(Float,  default=0.0)
 
 # New model for BHW threads
 class BHWThread(Base):

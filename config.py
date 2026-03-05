@@ -18,6 +18,15 @@ CAPTCHA_API_KEY = os.getenv("TWO_CAPTCHA_API_KEY")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 GEMINI_MODEL = os.getenv("GEMINI_MODEL")
 
+# ── MERIDIAN ────────────────────────────────────────────────────────────────
+MERIDIAN_ENABLED   = os.getenv("MERIDIAN_ENABLED", "1") == "1"
+MERIDIAN_THRESHOLD = int(os.getenv("MERIDIAN_THRESHOLD", "60"))
+WA_BRIDGE_URL      = os.getenv("WA_BRIDGE_URL", "http://localhost:3001/send")
+WA_GROUP_JID       = os.getenv("WA_GROUP_JID", "")
+PKR_PER_USD        = float(os.getenv("PKR_PER_USD", "280"))
+OPENAI_API_KEY     = os.getenv("OPENAI_API_KEY", "")
+OPENAI_MODEL       = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+
 # BHW Scraper config
 BHW_SCRAPER_PAGES = int(os.getenv("BHW_SCRAPER_PAGES", 1))
 BHW_SCRAPER_DELAY = int(os.getenv("BHW_SCRAPER_DELAY", 2))

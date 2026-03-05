@@ -25,6 +25,9 @@ jobs:
             git reset --hard origin/main
             python -m pip install "requests-toolbelt>=1.0.0" --prefer-binary -q
             python -m pip install --prefer-binary -r requirements.txt -q
+            cd C:\upwork-outbound-agent\whatsapp_bridge
+            npm install --omit=dev --quiet
+            cd C:\upwork-outbound-agent
             sc stop upwork-outbound-agent || echo Service was not running
             ping -n 5 127.0.0.1
             sc start upwork-outbound-agent

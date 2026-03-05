@@ -12,3 +12,6 @@ curl-cffi
 python-dateutil
 google-generativeai
 nest-asyncio
+openai
+httpx
+pyyaml

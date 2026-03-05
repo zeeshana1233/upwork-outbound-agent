@@ -87,6 +87,9 @@ def filter_jobs_by_criteria(jobs_data, filters=None):
         'hubspot', 'salesforce', 'marketo',
         # Data science / ML that gets caught by generic automation terms
         'machine learning', 'mlops', 'data pipeline',
+        # Meta / Facebook ads jobs — not our service
+        'meta ads', 'facebook ads manager', 'campaign manager and creatives',
+        'creatives and campaign', 'meta ads campaign manager',
     ]
 
     filtered_jobs = []

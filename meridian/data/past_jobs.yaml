@@ -1,0 +1,239 @@
+# MERIDIAN reference corpus — 22 entries from bitbash_projects_cleaned.csv
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ─── ANDROID ─────────────────────────────────────────────────────────────────
+- title: "Android Device Automation for App Interaction at Scale"
+  description: "Build a cluster of mobile devices/emulators running dozens (eventually hundreds) of Android devices simultaneously. Automate mobile app workflows across all devices in parallel."
+  category: android
+  skills: ["Python", "Android SDK", "ADB", "Appium", "Threading", "Emulator Management"]
+  budget: null
+  job_type: fixed
+  experience_level: expert
+  outcome: completed
+  weight: 2.0
+  source: csv_import
+
+- title: "Android Emulator Automation System for Google Search & Maps Navigation"
+  description: "Develop a scalable software platform managing and orchestrating 30+ Android emulators. Full GPS emulation, Google Maps navigation automation, parallel device control."
+  category: android
+  skills: ["Python", "ADB", "Android Emulator", "GPS Emulation", "Multiprocessing", "Android SDK"]
+  budget: null
+  job_type: fixed
+  experience_level: expert
+  outcome: won
+  weight: 2.0
+  source: csv_import
+
+# ─── BROWSER AUTOMATION ──────────────────────────────────────────────────────
+- title: "Incogniton Automation Bot Development"
+  description: "Build automation bot for Multilogin environment. Facebook automation across multiple browser profiles."
+  category: browser
+  skills: ["Python", "Selenium", "Multilogin", "Browser Automation", "Facebook Automation"]
+  budget: null
+  job_type: fixed
+  experience_level: intermediate
+  outcome: completed
+  weight: 1.5
+  source: csv_import
+
+- title: "Custom Bot Automation — Multilogin and Selenium"
+  description: "Script a customized desktop and browser bot using Multilogin and Selenium for multi-account automation."
+  category: browser
+  skills: ["Python", "Selenium", "Multilogin", "Browser Automation"]
+  budget: null
+  job_type: fixed
+  experience_level: intermediate
+  outcome: completed
+  weight: 1.0
+  source: csv_import
+
+- title: "Multilogin + Selenium Social Media Automation"
+  description: "Automate social media interactions to emulate human behaviour. Multi-account management with MLA (Multilogin) and Selenium. Separate sessions with human-like timing."
+  category: browser
+  skills: ["Selenium", "Multilogin", "Python", "Social Media Automation", "Browser Profiles"]
+  budget: null
+  job_type: fixed
+  experience_level: expert
+  outcome: completed
+  weight: 1.5
+  source: csv_import
+
+- title: "LinkedIn Account Automation on GoLogin / Multilogin / Dolphin Anty"
+  description: "Build scalable LinkedIn automation managing multiple accounts using GoLogin/Multilogin/Dolphin Anty. Automate messaging, connection requests, and profile actions."
+  category: browser
+  skills: ["Python", "GoLogin", "Multilogin", "Dolphin Anty", "Selenium", "LinkedIn Automation"]
+  budget: null
+  job_type: fixed
+  experience_level: expert
+  outcome: won
+  weight: 2.0
+  source: csv_import
+
+- title: "Long Term Support and Updates for Selenium Bot"
+  description: "Maintain, update, and improve an existing Selenium automation bot. Ongoing hourly support contract."
+  category: browser
+  skills: ["Python", "Selenium", "Bot Maintenance", "Browser Automation"]
+  budget: null
+  job_type: hourly
+  experience_level: intermediate
+  outcome: completed
+  weight: 1.0
+  source: csv_import
+
+# ─── SOCIAL MEDIA BOTS ───────────────────────────────────────────────────────
+- title: "Automate SMM Panel API Purchases for Twitter & Telegram Engagement"
+  description: "Build a private automation platform integrating SMM panel API to automate purchasing of likes, views, followers for Twitter and Telegram. Backend logic with optional frontend dashboard."
+  category: social
+  skills: ["Python", "API Integration", "SMM Panel", "Twitter API", "Telegram Bot", "Backend Development"]
+  budget: null
+  job_type: fixed
+  experience_level: intermediate
+  outcome: completed
+  weight: 1.5
+  source: csv_import
+
+- title: "Build a LinkedIn Bot"
+  description: "Build an app automating LinkedIn activities: connection requests, messaging, profile interactions. First LinkedIn, then Twitter."
+  category: social
+  skills: ["Python", "Selenium", "LinkedIn Automation", "Twitter Automation"]
+  budget: null
+  job_type: fixed
+  experience_level: intermediate
+  outcome: interested
+  weight: 1.0
+  source: csv_import
+
+- title: "Project Zuckerberg — Multi-Platform E-commerce Automation"
+  description: "E-commerce company with multiple websites needs a software engineer for multi-platform automation across social and e-commerce channels."
+  category: social
+  skills: ["Python", "Automation", "E-commerce", "Multi-platform", "Backend Development"]
+  budget: null
+  job_type: fixed
+  experience_level: expert
+  outcome: interested
+  weight: 1.0
+  source: csv_import
+
+# ─── SCRAPING / AUTOMATION ───────────────────────────────────────────────────
+- title: "Data Crawling and Architecture Development"
+  description: "Python and Django. Crawl large amounts of data from multiple sources. Parallelise crawling, schedule crawl jobs, and design the overall architecture."
+  category: automation
+  skills: ["Python", "Django", "Web Scraping", "Data Pipeline", "Parallel Processing", "Scheduling"]
+  budget: null
+  job_type: fixed
+  experience_level: expert
+  outcome: completed
+  weight: 1.5
+  source: csv_import
+
+- title: "LinkedIn Profile Scraper"
+  description: "Extract and organise LinkedIn profile data: name, job title, connections count, education, employment history into a consistent structured format."
+  category: automation
+  skills: ["Python", "LinkedIn Scraper", "Data Extraction", "Web Scraping"]
+  budget: null
+  job_type: fixed
+  experience_level: intermediate
+  outcome: completed
+  weight: 1.0
+  source: csv_import
+
+- title: "LinkedIn Profile and Company Scraper by Country"
+  description: "NodeJS or Python scraper for LinkedIn profiles and company pages filtered by country. Store to MongoDB. Output matches provided JSON schema."
+  category: automation
+  skills: ["Python", "Node.js", "LinkedIn Scraping", "MongoDB", "Web Scraping"]
+  budget: null
+  job_type: fixed
+  experience_level: intermediate
+  outcome: completed
+  weight: 1.0
+  source: csv_import
+
+- title: "Scrape Product Details From One Website"
+  description: "Scrape product images, prices, descriptions and structured fields from a single e-commerce website. Deliver as structured CSV or JSON."
+  category: automation
+  skills: ["Python", "BeautifulSoup", "Selenium", "Web Scraping", "Data Extraction"]
+  budget: null
+  job_type: fixed
+  experience_level: entry
+  outcome: completed
+  weight: 0.5
+  source: csv_import
+
+- title: "Scraping Tweets and Save to SQL Database"
+  description: "Scrape all tweets from a list of specific Twitter fact accounts. Store results in SQL database. Handle Twitter rate limits cleanly."
+  category: automation
+  skills: ["Python", "Twitter API", "SQL", "Web Scraping", "PostgreSQL"]
+  budget: null
+  job_type: fixed
+  experience_level: intermediate
+  outcome: completed
+  weight: 1.0
+  source: csv_import
+
+- title: "Backup Wistia Videos and Metadata to Google Drive"
+  description: "Export ~1300 Wistia videos with original media, thumbnails, transcripts, and metadata to Google Drive using an automated script."
+  category: automation
+  skills: ["Python", "Wistia API", "Google Drive API", "Automation", "API Integration"]
+  budget: null
+  job_type: fixed
+  experience_level: intermediate
+  outcome: completed
+  weight: 0.5
+  source: csv_import
+
+# ─── WEB DEVELOPMENT ─────────────────────────────────────────────────────────
+- title: "Full-Stack Django Developer with CI/CD and Git Expertise"
+  description: "Develop and maintain web applications using Django, Python, and JavaScript frameworks (React/Angular). Covers front-end, back-end, database management, and CI/CD pipeline setup."
+  category: web
+  skills: ["Python", "Django", "React", "Angular", "CI/CD", "Git", "REST API", "JavaScript"]
+  budget: null
+  job_type: hourly
+  experience_level: expert
+  outcome: completed
+  weight: 1.5
+  source: csv_import
+
+- title: "AppSeed Python AI/ML Tool — Query SQLite, PostgreSQL, PDF, CSV"
+  description: "Build a Python tool querying multiple data sources (SQLite, PostgreSQL, PDF, CSV) through an AI/ML query interface. Long-term engagement with iterative delivery."
+  category: web
+  skills: ["Python", "PostgreSQL", "SQLite", "LangChain", "OpenAI", "Data Pipelines", "API"]
+  budget: null
+  job_type: hourly
+  experience_level: expert
+  outcome: completed
+  weight: 1.5
+  source: csv_import
+
+- title: "PHP Upgrade — Outdated CodeIgniter Site to PHP 7"
+  description: "Upgrade an outdated CodeIgniter application to PHP 7. No new feature work."
+  category: web
+  skills: ["PHP", "CodeIgniter", "PHP 7 Upgrade"]
+  budget: null
+  job_type: fixed
+  experience_level: intermediate
+  outcome: completed
+  weight: 0.5
+  source: csv_import
+
+# ─── AI AUTOMATION ───────────────────────────────────────────────────────────
+- title: "Developer — Automated Content Creation with ChatGPT4 API"
+  description: "Build a solution automating article generation using OpenAI ChatGPT4 API. Combines content scraping and AI generation pipeline."
+  category: ai
+  skills: ["Python", "OpenAI API", "ChatGPT", "Content Automation", "Web Scraping"]
+  budget: null
+  job_type: fixed
+  experience_level: intermediate
+  outcome: interested
+  weight: 0.5
+  source: csv_import
+
+- title: "ChatGPT OpenAI Developer — Legal Contract Management AI"
+  description: "Add AI capabilities to a legal contract management app. Allow users to query contracts using ChatGPT/Jasper AI."
+  category: ai
+  skills: ["Python", "OpenAI API", "ChatGPT", "Legal Tech", "AI Integration"]
+  budget: null
+  job_type: fixed
+  experience_level: expert
+  outcome: interested
+  weight: 0.5
+  source: csv_import

@@ -3,6 +3,36 @@ import asyncio
 import os
 from datetime import datetime, timezone, timedelta
 
+# ── MERIDIAN imports (lazy-safe — only runs after bot is ready) ──
+try:
+    import sys as _sys, os as _os
+    _sys.path.insert(0, _os.path.dirname(_os.path.dirname(__file__)))
+    import config as _meridian_config
+    import meridian as _meridian
+    from meridian import cost_tracker as _cost_tracker
+    _MERIDIAN_AVAILABLE = True
+except Exception as _me:
+    print(f"[MERIDIAN] Import failed (disabled): {_me}")
+    _MERIDIAN_AVAILABLE = False
+
+
+async def _save_meridian_result(job_id: str, result: dict):
+    """Persist MERIDIAN score to the jobs table (best-effort)."""
+    try:
+        import datetime as _dt
+        from db.database import SessionLocal
+        from db.models import Job
+        with SessionLocal() as s:
+            row = s.query(Job).filter(Job.job_id == str(job_id)).first()
+            if row:
+                row.meridian_score     = result.get("total_score")
+                row.meridian_verdict   = result.get("verdict")
+                row.meridian_reasoning = result.get("reasoning")
+                row.meridian_run_at    = _dt.datetime.utcnow()
+                s.commit()
+    except Exception as e:
+        print(f"[MERIDIAN] DB save error: {e}")
+
 async def fetch_and_build_job_message(job, search_context=""):
     """
     Fetch job details and build a complete message with all information.
@@ -217,6 +247,24 @@ async def process_single_search(search):
                 await channel.send(complete_message)
                 posted_count += 1
                 print(f"[Real-time] Posted NEW job: {job.get('title', 'Unknown')[:50]}...")
+
+                # ── MERIDIAN GATE (after Discord post — never blocks it) ──
+                if _MERIDIAN_AVAILABLE and _meridian_config.MERIDIAN_ENABLED and _meridian_config.WA_GROUP_JID:
+                    try:
+                        meridian_result = await _meridian.run_meridian(job, search["category"])
+                        score   = meridian_result.get("total_score", -1)
+                        verdict = meridian_result.get("verdict", "pass")
+                        cost_pkr = meridian_result.get("_cost_pkr", 0.0)
+
+                        asyncio.create_task(_save_meridian_result(job.get("id"), meridian_result))
+                        print(f"[MERIDIAN] '{job.get('title','?')[:40]}' → {score}/100 ({verdict.upper()}) ₨{cost_pkr:.4f}")
+
+                        if verdict == "pass":
+                            wa_msg = _meridian.build_wa_job_message(job, meridian_result, search["category"], cost_pkr)
+                            asyncio.create_task(_meridian.send_whatsapp(_meridian_config.WA_GROUP_JID, wa_msg))
+                    except Exception as _me:
+                        print(f"[MERIDIAN] Gate error (non-fatal): {_me}")
+
                 await asyncio.sleep(2)  # Rate limit protection
             except Exception as post_error:
                 print(f"[Real-time] Error posting message: {post_error}")
@@ -239,16 +287,22 @@ async def run_advanced_job_searches():
     """
     Run job searches in small batches to balance speed vs rate-limiting.
     Processes 5 keywords concurrently per batch, with a short pause between batches.
+    Skip any search entry with enabled=False.
     """
     await bot.wait_until_ready()
-    print(f"[Real-time] Starting job monitoring cycle ({len(ADVANCED_JOB_SEARCHES)} keywords)...")
+    # Filter out disabled entries (enabled=False); default is enabled when key is absent
+    active_searches = [s for s in ADVANCED_JOB_SEARCHES if s.get("enabled", True)]
+    disabled_count  = len(ADVANCED_JOB_SEARCHES) - len(active_searches)
+    if disabled_count:
+        print(f"[Real-time] {disabled_count} keyword(s) disabled (enabled=False) — skipping them")
+    print(f"[Real-time] Starting job monitoring cycle ({len(active_searches)} active keywords)...")
     
     success_count = 0
     error_count = 0
     batch_size = 5
     
-    for batch_start in range(0, len(ADVANCED_JOB_SEARCHES), batch_size):
-        batch = ADVANCED_JOB_SEARCHES[batch_start:batch_start + batch_size]
+    for batch_start in range(0, len(active_searches), batch_size):
+        batch = active_searches[batch_start:batch_start + batch_size]
         batch_num = (batch_start // batch_size) + 1
         
         # Run batch concurrently
@@ -269,10 +323,19 @@ async def run_advanced_job_searches():
                 success_count += 1
         
         # Brief pause between batches to avoid rate limits
-        if batch_start + batch_size < len(ADVANCED_JOB_SEARCHES):
+        if batch_start + batch_size < len(active_searches):
             await asyncio.sleep(random.uniform(3, 5))
     
     print(f"[Real-time] Completed scan: {success_count} OK, {error_count} errors")
+
+    # ── MERIDIAN CYCLE FINANCE REPORT ───────────────────────────
+    if _MERIDIAN_AVAILABLE and _meridian_config.MERIDIAN_ENABLED and _meridian_config.WA_GROUP_JID:
+        try:
+            report = _cost_tracker.flush_cycle_report()
+            if report:
+                asyncio.create_task(_meridian.send_whatsapp(_meridian_config.WA_GROUP_JID, report))
+        except Exception as _fe:
+            print(f"[MERIDIAN] Finance report error: {_fe}")
 
 import discord
 from discord.ext import commands, tasks

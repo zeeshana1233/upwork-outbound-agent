@@ -220,35 +220,40 @@ ADVANCED_JOB_SEARCHES = [
         "keyword": "TikTok Shop Manager",
         "query": "TikTok Shop Manager",
         "channel_id": 1371453441938817054,
-        "filters": {}
+        "filters": {},
+        "enabled": False
     },
     {
         "category": "TikTok Shop",
         "keyword": "TikTok Shop Affiliate",
         "query": "title:(tiktok shop affiliate)",
         "channel_id": 1371453441938817054,
-        "filters": {}
+        "filters": {},
+        "enabled": False
     },
     {
         "category": "TikTok Shop",
         "keyword": "TikTok Affiliate Outreach",
         "query": "description:(tiktok) description:(affiliate) description:(outreach)",
         "channel_id": 1371453441938817054,
-        "filters": {}
+        "filters": {},
+        "enabled": False
     },
     {
         "category": "TikTok Shop",
         "keyword": "TikTok Outreach Bot",
         "query": "title:(tiktok outreach) OR description:(tiktok outreach)",
         "channel_id": 1371453441938817054,
-        "filters": {}
+        "filters": {},
+        "enabled": False
     },
     {
         "category": "TikTok Shop",
         "keyword": "TikTok Shop Automation",
         "query": "title:(tiktok shop) description:(automate)",
         "channel_id": 1371453441938817054,
-        "filters": {}
+        "filters": {},
+        "enabled": False
     },
 
     # ─── AI CHATBOT & LLM DEVELOPMENT ────────────────────────────────────────
@@ -260,98 +265,112 @@ ADVANCED_JOB_SEARCHES = [
         "keyword": "OpenAI Integration",
         "query": "title:(openai) OR title:(chatgpt)",
         "channel_id": 1372474025476882532,
-        "filters": {}
+        "filters": {},
+        "enabled": False
     },
     {
         "category": "AI Chatbot & LLM",
         "keyword": "LangChain",
         "query": "title:(langchain) OR description:(langchain)",
         "channel_id": 1372474025476882532,
-        "filters": {}
+        "filters": {},
+        "enabled": False
     },
     {
         "category": "AI Chatbot & LLM",
         "keyword": "RAG System",
         "query": "title:(RAG) OR description:(retrieval augmented)",
         "channel_id": 1372474025476882532,
-        "filters": {}
+        "filters": {},
+        "enabled": False
     },
     {
         "category": "AI Chatbot & LLM",
         "keyword": "AI Chatbot",
         "query": "title:(AI chatbot) OR title:(chatbot AI)",
         "channel_id": 1372474025476882532,
-        "filters": {}
+        "filters": {},
+        "enabled": False
     },
     {
         "category": "AI Chatbot & LLM",
         "keyword": "WhatsApp Chatbot",
         "query": "title:(whatsapp bot) OR title:(whatsapp chatbot)",
         "channel_id": 1372474025476882532,
-        "filters": {}
+        "filters": {},
+        "enabled": False
     },
     {
         "category": "AI Chatbot & LLM",
         "keyword": "LLM Developer",
         "query": "title:(LLM developer) OR description:(large language model)",
         "channel_id": 1372474025476882532,
-        "filters": {}
+        "filters": {},
+        "enabled": False
     },
     {
         "category": "AI Chatbot & LLM",
         "keyword": "HuggingFace",
         "query": "title:(huggingface) OR description:(huggingface)",
         "channel_id": 1372474025476882532,
-        "filters": {}
+        "filters": {},
+        "enabled": False
     },
     {
         "category": "AI Chatbot & LLM",
         "keyword": "Vector Database",
         "query": "title:(vector database) OR description:(vector database)",
         "channel_id": 1372474025476882532,
-        "filters": {}
+        "filters": {},
+        "enabled": False
     },
     {
         "category": "AI Chatbot & LLM",
         "keyword": "GPT Developer",
         "query": "title:(GPT developer) OR title:(GPT-4 developer)",
         "channel_id": 1372474025476882532,
-        "filters": {}
+        "filters": {},
+        "enabled": False
     },
     {
         "category": "AI Chatbot & LLM",
         "keyword": "AI Agent",
         "query": "title:(AI agent) OR description:(AI agent)",
         "channel_id": 1372474025476882532,
-        "filters": {}
+        "filters": {},
+        "enabled": False
     },
     {
         "category": "AI Chatbot & LLM",
         "keyword": "n8n",
         "query": "n8n",
         "channel_id": 1372474025476882532,
-        "filters": {}
+        "filters": {},
+        "enabled": False
     },
     {
         "category": "AI Chatbot & LLM",
         "keyword": "Make.com",
         "query": "make.com",
         "channel_id": 1372474025476882532,
-        "filters": {}
+        "filters": {},
+        "enabled": False
     },
     {
         "category": "AI Chatbot & LLM",
         "keyword": "Zapier",
         "query": "zapier",
         "channel_id": 1372474025476882532,
-        "filters": {}
+        "filters": {},
+        "enabled": False
     },
     {
         "category": "AI Chatbot & LLM",
         "keyword": "Pipedream",
         "query": "pipedream",
         "channel_id": 1372474025476882532,
-        "filters": {}
+        "filters": {},
+        "enabled": False
     },
 
     # ─── WEB DEVELOPMENT ─────────────────────────────────────────────────────
@@ -362,35 +381,40 @@ ADVANCED_JOB_SEARCHES = [
         "keyword": "React / Next.js Developer",
         "query": "title:(React developer) OR title:(Next.js developer) OR title:(NextJS developer)",
         "channel_id": 1364551909251223594,
-        "filters": {}
+        "filters": {},
+        "enabled": False
     },
     {
         "category": "Web Development",
         "keyword": "Python Web Developer",
         "query": "title:(Django developer) OR title:(Flask developer) OR title:(Python web developer)",
         "channel_id": 1364551909251223594,
-        "filters": {}
+        "filters": {},
+        "enabled": False
     },
     {
         "category": "Web Development",
         "keyword": "Full Stack Developer",
         "query": "title:(full stack developer) OR title:(MERN developer) OR title:(fullstack developer)",
         "channel_id": 1364551909251223594,
-        "filters": {}
+        "filters": {},
+        "enabled": False
     },
     {
         "category": "Web Development",
         "keyword": "Node.js Developer",
         "query": "title:(Node.js developer) OR title:(NodeJS developer)",
         "channel_id": 1364551909251223594,
-        "filters": {}
+        "filters": {},
+        "enabled": False
     },
     {
         "category": "Web Development",
         "keyword": "FastAPI Developer",
         "query": "title:(FastAPI) OR description:(FastAPI developer)",
         "channel_id": 1364551909251223594,
-        "filters": {}
+        "filters": {},
+        "enabled": False
     },
 
     # ─── GENERAL AUTOMATION ──────────────────────────────────────────────────

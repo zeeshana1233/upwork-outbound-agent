@@ -12,10 +12,18 @@ env/
 .env
 *.json
 
+# Exceptions — committed JSON files
+!whatsapp_bridge/package.json
+!whatsapp_bridge/package-lock.json
+
 # Runtime data
 seen_threads.json
 downloaded_files/
 _debug/
+
+# WhatsApp bridge runtime (not committed)
+whatsapp_bridge/node_modules/
+whatsapp_bridge/session/
 
 # Database
 *.db
