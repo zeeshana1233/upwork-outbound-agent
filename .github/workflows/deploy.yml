@@ -10,18 +10,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Decode WA session zip on runner
-        run: echo "${{ secrets.WA_SESSION_B64 }}" | base64 -d > wa_session.zip
-
-      - name: Copy WA session zip to server
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }}
-          password: ${{ secrets.SERVER_PASSWORD }}
-          source: "wa_session.zip"
-          target: "C:/upwork-outbound-agent/whatsapp_bridge"
-
       - name: Deploy via SSH to Windows
         uses: appleboy/ssh-action@v1.2.0
         with:
@@ -31,14 +19,13 @@ jobs:
           script_stop: true
           timeout: 300s
           command_timeout: 15m
+          envs: WA_SESSION_P1,WA_SESSION_P2,WA_SESSION_P3
           script: |
             if not exist C:\upwork-outbound-agent\whatsapp_bridge\session\creds.json (
-                cd C:\upwork-outbound-agent\whatsapp_bridge
-                powershell -Command "Expand-Archive -Path wa_session.zip -DestinationPath . -Force"
-                echo WA session restored from secret
-            )
-            if exist C:\upwork-outbound-agent\whatsapp_bridge\wa_session.zip (
+                powershell -Command "& { $b64 = $env:WA_SESSION_P1 + $env:WA_SESSION_P2 + $env:WA_SESSION_P3; $bytes = [Convert]::FromBase64String($b64); [IO.File]::WriteAllBytes('C:\upwork-outbound-agent\whatsapp_bridge\wa_session.zip', $bytes) }"
+                powershell -Command "Expand-Archive -Path C:\upwork-outbound-agent\whatsapp_bridge\wa_session.zip -DestinationPath C:\upwork-outbound-agent\whatsapp_bridge -Force"
                 del C:\upwork-outbound-agent\whatsapp_bridge\wa_session.zip
+                echo WA session restored
             )
             cd C:\upwork-outbound-agent
             git fetch origin main
@@ -53,3 +40,7 @@ jobs:
             sc start upwork-outbound-agent
             ping -n 12 127.0.0.1
             sc query upwork-outbound-agent
+        env:
+          WA_SESSION_P1: ${{ secrets.WA_SESSION_P1 }}
+          WA_SESSION_P2: ${{ secrets.WA_SESSION_P2 }}
+          WA_SESSION_P3: ${{ secrets.WA_SESSION_P3 }}
