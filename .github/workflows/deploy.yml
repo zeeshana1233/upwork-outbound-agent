@@ -10,6 +10,18 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Decode WA session zip on runner
+        run: echo "${{ secrets.WA_SESSION_B64 }}" | base64 -d > wa_session.zip
+
+      - name: Copy WA session zip to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          password: ${{ secrets.SERVER_PASSWORD }}
+          source: "wa_session.zip"
+          target: "C:/upwork-outbound-agent/whatsapp_bridge"
+
       - name: Deploy via SSH to Windows
         uses: appleboy/ssh-action@v1.2.0
         with:
@@ -20,6 +32,14 @@ jobs:
           timeout: 300s
           command_timeout: 15m
           script: |
+            if not exist C:\upwork-outbound-agent\whatsapp_bridge\session\creds.json (
+                cd C:\upwork-outbound-agent\whatsapp_bridge
+                powershell -Command "Expand-Archive -Path wa_session.zip -DestinationPath . -Force"
+                echo WA session restored from secret
+            )
+            if exist C:\upwork-outbound-agent\whatsapp_bridge\wa_session.zip (
+                del C:\upwork-outbound-agent\whatsapp_bridge\wa_session.zip
+            )
             cd C:\upwork-outbound-agent
             git fetch origin main
             git reset --hard origin/main
