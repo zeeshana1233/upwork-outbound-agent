@@ -20,7 +20,6 @@ jobs:
           timeout: 300s
           command_timeout: 15m
           script: |
-            powershell -Command "if (-not (Test-Path 'C:\upwork-outbound-agent\whatsapp_bridge\session\creds.json')) { $b64 = '${{ secrets.WA_SESSION_P1 }}' + '${{ secrets.WA_SESSION_P2 }}' + '${{ secrets.WA_SESSION_P3 }}'; $bytes = [Convert]::FromBase64String($b64); [IO.File]::WriteAllBytes('C:\upwork-outbound-agent\whatsapp_bridge\wa_session.zip', $bytes); Expand-Archive -Path 'C:\upwork-outbound-agent\whatsapp_bridge\wa_session.zip' -DestinationPath 'C:\upwork-outbound-agent\whatsapp_bridge' -Force; Remove-Item 'C:\upwork-outbound-agent\whatsapp_bridge\wa_session.zip'; Write-Host 'WA session restored' } else { Write-Host 'WA session already exists, skipping' }"
             cd C:\upwork-outbound-agent
             git fetch origin main
             git reset --hard origin/main
