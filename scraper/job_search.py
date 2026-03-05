@@ -69,13 +69,12 @@ def debug_job_ids(jobs_data):
 def filter_jobs_by_criteria(jobs_data, filters=None):
     """
     Filter jobs based on specific criteria:
-    - Payment verification required (checked if available in job data)
-    - Experience level: intermediate (2) or expert (3) only
     - Exclude jobs with certain keywords in title, description, or skills
+    - Budget floor: skip fixed-price jobs below $200
     """
     if not jobs_data:
         return jobs_data
-    
+
     # Keywords to exclude from title, description, and skills (case-insensitive)
     excluded_keywords = [
         # Chatbot / AI assistant noise — not our service
@@ -89,27 +88,27 @@ def filter_jobs_by_criteria(jobs_data, filters=None):
         # Data science / ML that gets caught by generic automation terms
         'machine learning', 'mlops', 'data pipeline',
     ]
-    
+
     filtered_jobs = []
     excluded_count = 0
-    
+
     for job in jobs_data:
         # Check for excluded keywords in title, description, and skills
         title = (job.get('title') or '').lower()
         description = (job.get('description') or '').lower()
         skills = [(skill or '').lower() for skill in (job.get('skills') or [])]
-        
+
         # Check if any excluded keyword appears in title, description, or skills
         should_exclude = False
         for keyword in excluded_keywords:
-            if (keyword in title or 
-                keyword in description or 
+            if (keyword in title or
+                keyword in description or
                 any(keyword in skill for skill in skills)):
                 excluded_count += 1
                 print(f"Excluded job '{job.get('title', 'Unknown')}' - Contains keyword: {keyword}")
                 should_exclude = True
                 break
-        
+
         if not should_exclude:
             # --- BUDGET FLOOR FILTER ---
             # Skip jobs where a fixed budget is explicitly set below $200
@@ -126,7 +125,7 @@ def filter_jobs_by_criteria(jobs_data, filters=None):
                     pass  # Can't parse budget, allow the job through
 
             filtered_jobs.append(job)
-    
+
     print(f"Filtered jobs: {len(filtered_jobs)} kept, {excluded_count} excluded")
     return filtered_jobs
 

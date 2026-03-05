@@ -206,13 +206,6 @@ ADVANCED_JOB_SEARCHES = [
     },
     {
         "category": "Social Media & SMM",
-        "keyword": "TikTok Outreach Bot",
-        "query": "title:(tiktok outreach) OR description:(tiktok outreach)",
-        "channel_id": SMM_BOTS_CHANNEL_ID,
-        "filters": {}
-    },
-    {
-        "category": "Social Media & SMM",
         "keyword": "TikTok Comment Bot",
         "query": "title:(tiktok comment)",
         "channel_id": SMM_BOTS_CHANNEL_ID,
@@ -240,6 +233,13 @@ ADVANCED_JOB_SEARCHES = [
         "category": "TikTok Shop",
         "keyword": "TikTok Affiliate Outreach",
         "query": "description:(tiktok) description:(affiliate) description:(outreach)",
+        "channel_id": 1371453441938817054,
+        "filters": {}
+    },
+    {
+        "category": "TikTok Shop",
+        "keyword": "TikTok Outreach Bot",
+        "query": "title:(tiktok outreach) OR description:(tiktok outreach)",
         "channel_id": 1371453441938817054,
         "filters": {}
     },
