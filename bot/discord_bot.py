@@ -726,24 +726,34 @@ async def on_ready():
             print(f"[DISCORD-NOTIFIER] MERIDIAN alerts → channel #{ch_id}")
         else:
             print("[DISCORD-NOTIFIER] MERIDIAN_DISCORD_CHANNEL_ID not set — Discord alerts disabled")
+    # Sync slash commands globally
+    try:
+        synced = await bot.tree.sync()
+        print(f"[SLASH] Synced {len(synced)} slash command(s)")
+    except Exception as _se:
+        print(f"[SLASH] Sync error: {_se}")
     bot.loop.create_task(run_scrapers_concurrently())
     bot.loop.create_task(_start_draft_http_server())
 
 
-@bot.command(name="agree")
-async def agree_command(ctx, job_number: int):
-    """Type !agree <N> in #meridian-alerts to generate a proposal draft for job N."""
+@bot.tree.command(name="agree", description="Generate a proposal draft for a job. Usage: /agree <job_number>")
+@discord.app_commands.describe(job_number="The job number shown in the job alert (e.g. 7)")
+async def agree_slash(interaction: discord.Interaction, job_number: int):
+    """Slash command: /agree <job_number> — triggers proposal draft generation."""
     meridian_ch_id = getattr(_meridian_config, "MERIDIAN_DISCORD_CHANNEL_ID", 0) if _MERIDIAN_AVAILABLE else 0
-    if meridian_ch_id and ctx.channel.id != int(meridian_ch_id):
-        await ctx.send("Use this command in #meridian-alerts.")
+    if meridian_ch_id and interaction.channel_id != int(meridian_ch_id):
+        await interaction.response.send_message("Use this command in #meridian-alerts.", ephemeral=True)
         return
-    await ctx.send(f"Got it — generating proposal draft for Job #{job_number}...")
+    if job_number < 1:
+        await interaction.response.send_message("Job number must be a positive integer.", ephemeral=True)
+        return
+    await interaction.response.send_message(f"Got it — generating proposal draft for Job #{job_number}...")
     asyncio.create_task(_generate_and_deliver_draft(job_number))
 
 
 # ── Module 3: Draft HTTP server ───────────────────────────────────────────────
-# The WhatsApp bridge POSTs here when it receives "agree <job_number>" from WA.
-# Endpoint: POST http://localhost:8765/draft   body: {"job_number": <int>}
+# Fallback entry point — accepts POST /draft  body: {"job_number": <int>}
+# Primary trigger is the /agree slash command above.
 
 DRAFT_SERVER_PORT = 8765
 
