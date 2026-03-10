@@ -114,18 +114,17 @@ def filter_jobs_by_criteria(jobs_data, filters=None):
 
         if not should_exclude:
             # --- BUDGET FLOOR FILTER ---
-            # Skip jobs where a fixed budget is explicitly set below $200
-            # (hourly jobs without a budget cap are always allowed through)
-            raw_budget = job.get('budget')
-            if raw_budget is not None:
-                try:
-                    budget_value = float(str(raw_budget).replace('$', '').replace(',', '').strip())
-                    if budget_value < 200:
-                        excluded_count += 1
-                        print(f"Excluded job '{job.get('title', 'Unknown')}' - Budget too low: ${budget_value}")
-                        continue
-                except (ValueError, TypeError):
-                    pass  # Can't parse budget, allow the job through
+            # Rules:
+            #   - No budget set (budget_numeric == 0 or missing) → always allow through
+            #   - Hourly job → always allow through (rate is per hour, not total)
+            #   - Fixed-price job with budget < $200 → exclude
+            job_type = (job.get('job_type') or job.get('engagement') or '').lower()
+            is_hourly = 'hourly' in job_type or bool(job.get('hourly_min'))
+            budget_numeric = job.get('budget_numeric', 0.0) or 0.0
+            if not is_hourly and budget_numeric > 0 and budget_numeric < 200:
+                excluded_count += 1
+                print(f"Excluded job '{job.get('title', 'Unknown')}' - Fixed budget too low: ${budget_numeric}")
+                continue
 
             filtered_jobs.append(job)
 
