@@ -452,7 +452,7 @@ from .job_search_keywords import ADVANCED_JOB_SEARCHES
 # The message-reading commands are all commented out, so no privileged intents
 # (Members / Message Content) are required — default is enough.
 _intents = discord.Intents.default()
-_intents.message_content = True   # needed to read "agree N" commands
+_intents.message_content = False   # not reading user messages (message_content is privileged)
 bot = commands.Bot(command_prefix="!", intents=_intents)
 scraper = UpworkScraper()
 
@@ -730,27 +730,15 @@ async def on_ready():
     bot.loop.create_task(_start_draft_http_server())
 
 
-@bot.event
-async def on_message(message):
-    """Listen for 'agree N' in #meridian-alerts and trigger proposal draft generation."""
-    # Ignore the bot's own messages
-    if message.author == bot.user:
-        await bot.process_commands(message)
-        return
-
-    # Only act in the MERIDIAN alerts channel
+@bot.command(name="agree")
+async def agree_command(ctx, job_number: int):
+    """Type !agree <N> in #meridian-alerts to generate a proposal draft for job N."""
     meridian_ch_id = getattr(_meridian_config, "MERIDIAN_DISCORD_CHANNEL_ID", 0) if _MERIDIAN_AVAILABLE else 0
-    if meridian_ch_id and message.channel.id == int(meridian_ch_id):
-        m = re.match(r"^\s*agree\s+(\d+)\s*$", message.content.strip(), re.IGNORECASE)
-        if m:
-            job_number = int(m.group(1))
-            await message.channel.send(
-                f"Got it — generating proposal draft for Job #{job_number}..."
-            )
-            asyncio.create_task(_generate_and_deliver_draft(job_number))
-            return  # don't fall through to process_commands
-
-    await bot.process_commands(message)
+    if meridian_ch_id and ctx.channel.id != int(meridian_ch_id):
+        await ctx.send("Use this command in #meridian-alerts.")
+        return
+    await ctx.send(f"Got it — generating proposal draft for Job #{job_number}...")
+    asyncio.create_task(_generate_and_deliver_draft(job_number))
 
 
 # ── Module 3: Draft HTTP server ───────────────────────────────────────────────
