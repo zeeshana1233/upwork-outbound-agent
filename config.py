@@ -27,6 +27,12 @@ PKR_PER_USD        = float(os.getenv("PKR_PER_USD", "280"))
 OPENAI_API_KEY     = os.getenv("OPENAI_API_KEY", "")
 OPENAI_MODEL       = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
 
+# ── MERIDIAN Discord notifications ──────────────────────────────────────────
+# Channel ID for #meridian-alerts — receives MERIDIAN match/skip, cost reports,
+# and proposal drafts. Set to 0 to disable Discord notifications.
+_meridian_ch = os.getenv("MERIDIAN_DISCORD_CHANNEL_ID", "0")
+MERIDIAN_DISCORD_CHANNEL_ID = int(_meridian_ch) if _meridian_ch.isdigit() else 0
+
 # BHW Scraper config
 BHW_SCRAPER_PAGES = int(os.getenv("BHW_SCRAPER_PAGES", 1))
 BHW_SCRAPER_DELAY = int(os.getenv("BHW_SCRAPER_DELAY", 2))

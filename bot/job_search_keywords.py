@@ -1,11 +1,12 @@
 # Channel IDs — Upwork_Bot server (server_id=1277527228401319936)
-# #appilot          1359407667692572713  → Android Automation
-# #stealth-mode     1359040879121403965  → Stealth Automation
-# #smm-bots         1478838044265025637  → Social Media & SMM
-# #tiktok-shop      1371453441938817054  → TikTok Shop
-# #ai-automation    1372474025476882532  → AI Chatbot & LLM Development
-# #web-dev          1364551909251223594  → Web Development
-# #automation       1359040738507358340  → General Automation
+# #appilot            1359407667692572713  → Android Automation
+# #stealth-mode       1359040879121403965  → Stealth Automation
+# #smm-bots           1478838044265025637  → Social Media & SMM
+# #tiktok-shop        1371453441938817054  → TikTok Shop
+# #ai-automation      1372474025476882532  → AI Chatbot & LLM Development
+# #web-development    1364551909251223594  → Web Development
+# #automation         1359040738507358340  → General Automation
+# #meridian-alerts    (set MERIDIAN_DISCORD_CHANNEL_ID in .env)  → MERIDIAN scores, proposals
 
 SMM_BOTS_CHANNEL_ID = 1478838044265025637
 
@@ -160,56 +161,64 @@ ADVANCED_JOB_SEARCHES = [
         "keyword": "SMM Panel",
         "query": "title:(SMM panel) OR description:(SMM panel)",
         "channel_id": SMM_BOTS_CHANNEL_ID,
-        "filters": {}
+        "filters": {},
+        "enabled": False
     },
     {
         "category": "Social Media & SMM",
         "keyword": "Twitter Bot",
         "query": "title:(twitter bot)",
         "channel_id": SMM_BOTS_CHANNEL_ID,
-        "filters": {}
+        "filters": {},
+        "enabled": False
     },
     {
         "category": "Social Media & SMM",
         "keyword": "Instagram Bot",
         "query": "title:(instagram bot) OR title:(IG bot)",
         "channel_id": SMM_BOTS_CHANNEL_ID,
-        "filters": {}
+        "filters": {},
+        "enabled": False
     },
     {
         "category": "Social Media & SMM",
         "keyword": "Telegram Bot Automation",
         "query": "title:(telegram bot) description:(automate)",
         "channel_id": SMM_BOTS_CHANNEL_ID,
-        "filters": {}
+        "filters": {},
+        "enabled": False
     },
     {
         "category": "Social Media & SMM",
         "keyword": "Follower Automation",
         "query": "title:(follower) description:(automate)",
         "channel_id": SMM_BOTS_CHANNEL_ID,
-        "filters": {}
+        "filters": {},
+        "enabled": False
     },
     {
         "category": "Social Media & SMM",
         "keyword": "Engagement Bot",
         "query": "title:(engagement bot) OR description:(engagement automation)",
         "channel_id": SMM_BOTS_CHANNEL_ID,
-        "filters": {}
+        "filters": {},
+        "enabled": False
     },
     {
         "category": "Social Media & SMM",
         "keyword": "Social Media Bot",
         "query": "title:(social media bot)",
         "channel_id": SMM_BOTS_CHANNEL_ID,
-        "filters": {}
+        "filters": {},
+        "enabled": False
     },
     {
         "category": "Social Media & SMM",
         "keyword": "TikTok Comment Bot",
         "query": "title:(tiktok comment)",
         "channel_id": SMM_BOTS_CHANNEL_ID,
-        "filters": {}
+        "filters": {},
+        "enabled": False
     },
 
     # ─── TIKTOK SHOP ─────────────────────────────────────────────────────────
@@ -256,12 +265,12 @@ ADVANCED_JOB_SEARCHES = [
         "enabled": False
     },
 
-    # ─── AI CHATBOT & LLM DEVELOPMENT ────────────────────────────────────────
+    # ─── AI AUTOMATION ────────────────────────────────────────────────────────
     # Channel: #ai-automation
     # Jobs for building AI-powered chatbots, LLM integrations, RAG systems.
     # Also includes no-code workflow tools (n8n, Zapier, Make.com).
     {
-        "category": "AI Chatbot & LLM",
+        "category": "AI Automation",
         "keyword": "OpenAI Integration",
         "query": "title:(openai) OR title:(chatgpt)",
         "channel_id": 1372474025476882532,
@@ -269,7 +278,7 @@ ADVANCED_JOB_SEARCHES = [
         "enabled": False
     },
     {
-        "category": "AI Chatbot & LLM",
+        "category": "AI Automation",
         "keyword": "LangChain",
         "query": "title:(langchain) OR description:(langchain)",
         "channel_id": 1372474025476882532,
@@ -277,7 +286,7 @@ ADVANCED_JOB_SEARCHES = [
         "enabled": False
     },
     {
-        "category": "AI Chatbot & LLM",
+        "category": "AI Automation",
         "keyword": "RAG System",
         "query": "title:(RAG) OR description:(retrieval augmented)",
         "channel_id": 1372474025476882532,
@@ -285,7 +294,7 @@ ADVANCED_JOB_SEARCHES = [
         "enabled": False
     },
     {
-        "category": "AI Chatbot & LLM",
+        "category": "AI Automation",
         "keyword": "AI Chatbot",
         "query": "title:(AI chatbot) OR title:(chatbot AI)",
         "channel_id": 1372474025476882532,
@@ -293,7 +302,7 @@ ADVANCED_JOB_SEARCHES = [
         "enabled": False
     },
     {
-        "category": "AI Chatbot & LLM",
+        "category": "AI Automation",
         "keyword": "WhatsApp Chatbot",
         "query": "title:(whatsapp bot) OR title:(whatsapp chatbot)",
         "channel_id": 1372474025476882532,
@@ -301,7 +310,7 @@ ADVANCED_JOB_SEARCHES = [
         "enabled": False
     },
     {
-        "category": "AI Chatbot & LLM",
+        "category": "AI Automation",
         "keyword": "LLM Developer",
         "query": "title:(LLM developer) OR description:(large language model)",
         "channel_id": 1372474025476882532,
@@ -309,7 +318,7 @@ ADVANCED_JOB_SEARCHES = [
         "enabled": False
     },
     {
-        "category": "AI Chatbot & LLM",
+        "category": "AI Automation",
         "keyword": "HuggingFace",
         "query": "title:(huggingface) OR description:(huggingface)",
         "channel_id": 1372474025476882532,
@@ -317,7 +326,7 @@ ADVANCED_JOB_SEARCHES = [
         "enabled": False
     },
     {
-        "category": "AI Chatbot & LLM",
+        "category": "AI Automation",
         "keyword": "Vector Database",
         "query": "title:(vector database) OR description:(vector database)",
         "channel_id": 1372474025476882532,
@@ -325,7 +334,7 @@ ADVANCED_JOB_SEARCHES = [
         "enabled": False
     },
     {
-        "category": "AI Chatbot & LLM",
+        "category": "AI Automation",
         "keyword": "GPT Developer",
         "query": "title:(GPT developer) OR title:(GPT-4 developer)",
         "channel_id": 1372474025476882532,
@@ -333,7 +342,7 @@ ADVANCED_JOB_SEARCHES = [
         "enabled": False
     },
     {
-        "category": "AI Chatbot & LLM",
+        "category": "AI Automation",
         "keyword": "AI Agent",
         "query": "title:(AI agent) OR description:(AI agent)",
         "channel_id": 1372474025476882532,
@@ -341,7 +350,7 @@ ADVANCED_JOB_SEARCHES = [
         "enabled": False
     },
     {
-        "category": "AI Chatbot & LLM",
+        "category": "AI Automation",
         "keyword": "n8n",
         "query": "n8n",
         "channel_id": 1372474025476882532,
@@ -349,7 +358,7 @@ ADVANCED_JOB_SEARCHES = [
         "enabled": False
     },
     {
-        "category": "AI Chatbot & LLM",
+        "category": "AI Automation",
         "keyword": "Make.com",
         "query": "make.com",
         "channel_id": 1372474025476882532,
@@ -357,7 +366,7 @@ ADVANCED_JOB_SEARCHES = [
         "enabled": False
     },
     {
-        "category": "AI Chatbot & LLM",
+        "category": "AI Automation",
         "keyword": "Zapier",
         "query": "zapier",
         "channel_id": 1372474025476882532,
@@ -365,7 +374,7 @@ ADVANCED_JOB_SEARCHES = [
         "enabled": False
     },
     {
-        "category": "AI Chatbot & LLM",
+        "category": "AI Automation",
         "keyword": "Pipedream",
         "query": "pipedream",
         "channel_id": 1372474025476882532,
@@ -381,40 +390,35 @@ ADVANCED_JOB_SEARCHES = [
         "keyword": "React / Next.js Developer",
         "query": "title:(React developer) OR title:(Next.js developer) OR title:(NextJS developer)",
         "channel_id": 1364551909251223594,
-        "filters": {},
-        "enabled": False
+        "filters": {}
     },
     {
         "category": "Web Development",
         "keyword": "Python Web Developer",
         "query": "title:(Django developer) OR title:(Flask developer) OR title:(Python web developer)",
         "channel_id": 1364551909251223594,
-        "filters": {},
-        "enabled": False
+        "filters": {}
     },
     {
         "category": "Web Development",
         "keyword": "Full Stack Developer",
         "query": "title:(full stack developer) OR title:(MERN developer) OR title:(fullstack developer)",
         "channel_id": 1364551909251223594,
-        "filters": {},
-        "enabled": False
+        "filters": {}
     },
     {
         "category": "Web Development",
         "keyword": "Node.js Developer",
         "query": "title:(Node.js developer) OR title:(NodeJS developer)",
         "channel_id": 1364551909251223594,
-        "filters": {},
-        "enabled": False
+        "filters": {}
     },
     {
         "category": "Web Development",
         "keyword": "FastAPI Developer",
         "query": "title:(FastAPI) OR description:(FastAPI developer)",
         "channel_id": 1364551909251223594,
-        "filters": {},
-        "enabled": False
+        "filters": {}
     },
 
     # ─── GENERAL AUTOMATION ──────────────────────────────────────────────────
@@ -451,7 +455,21 @@ ADVANCED_JOB_SEARCHES = [
     {
         "category": "Automation",
         "keyword": "Script Automation",
-        "query": "title:(automation script) OR title:(python automation)",
+        "query": "title:(automation script) OR title:(python automation) OR title:(python scripting)",
+        "channel_id": 1359040738507358340,
+        "filters": {}
+    },
+    {
+        "category": "Automation",
+        "keyword": "Workflow Automation",
+        "query": "title:(workflow automation) OR title:(workflow script)",
+        "channel_id": 1359040738507358340,
+        "filters": {}
+    },
+    {
+        "category": "Automation",
+        "keyword": "Python Scripting",
+        "query": "title:(python scripting) OR title:(python script) OR title:(python workflow)",
         "channel_id": 1359040738507358340,
         "filters": {}
     },

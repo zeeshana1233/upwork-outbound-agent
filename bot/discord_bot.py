@@ -15,6 +15,18 @@ except Exception as _me:
     print(f"[MERIDIAN] Import failed (disabled): {_me}")
     _MERIDIAN_AVAILABLE = False
 
+# ── Discord notifier import (for #meridian-alerts channel) ──
+try:
+    from bot.discord_notifier import (
+        set_bot as _dn_set_bot,
+        send_meridian_discord as _dn_send_meridian,
+        send_cost_report_discord as _dn_send_cost_report,
+    )
+    _DISCORD_NOTIFIER_AVAILABLE = True
+except Exception as _dne:
+    print(f"[DISCORD-NOTIFIER] Import failed (disabled): {_dne}")
+    _DISCORD_NOTIFIER_AVAILABLE = False
+
 
 async def _save_meridian_result(job_id: str, result: dict):
     """Persist MERIDIAN score to the jobs table (best-effort)."""
@@ -32,6 +44,80 @@ async def _save_meridian_result(job_id: str, result: dict):
                 s.commit()
     except Exception as e:
         print(f"[MERIDIAN] DB save error: {e}")
+
+
+def _save_job_to_db(job: dict) -> int:
+    """
+    Upsert a job into the DB and assign the next sequential job_number if new.
+    Returns the job_number assigned (existing or new), or -1 on failure.
+    """
+    try:
+        from db.database import SessionLocal
+        from db.models import Job
+        job_id = str(job.get("id") or job.get("ciphertext") or "")
+        if not job_id:
+            return -1
+
+        # Parse budget to float
+        budget_raw = job.get("budget")
+        budget_float = None
+        if budget_raw:
+            try:
+                budget_float = float(str(budget_raw).replace("$", "").replace(",", "").split()[0])
+            except Exception:
+                pass
+
+        with SessionLocal() as s:
+            existing = s.query(Job).filter(Job.job_id == job_id).first()
+            if existing:
+                if existing.job_number:
+                    return existing.job_number
+                # Row exists but job_number was never assigned — assign one now
+                from sqlalchemy import func
+                max_num = s.query(func.max(Job.job_number)).scalar() or 0
+                existing.job_number = max_num + 1
+                s.commit()
+                print(f"[DB] Backfilled job_number #{existing.job_number} for existing job: {existing.title[:50]}")
+                return existing.job_number
+
+            # Assign the next job_number atomically
+            from sqlalchemy import func
+            max_num = s.query(func.max(Job.job_number)).scalar() or 0
+            new_num = max_num + 1
+
+            row = Job(
+                job_id      = job_id,
+                job_number  = new_num,
+                title       = (job.get("title") or "")[:500],
+                description = job.get("description") or "",
+                budget      = budget_float,
+                skills      = str(job.get("skills") or ""),
+                client      = str(job.get("client") or ""),
+                job_type    = job.get("job_type") or job.get("engagement") or None,
+            )
+            s.add(row)
+            s.commit()
+            print(f"[DB] Saved job #{new_num}: {row.title[:50]}")
+            return new_num
+    except Exception as e:
+        if "duplicate" in str(e).lower() or "unique" in str(e).lower():
+            return -1  # already exists, not a real error
+        print(f"[DB] Error saving job: {e}")
+        return -1
+
+
+def _store_discord_message_id(job_id: str, discord_message_id: str):
+    """Write the Discord message ID back to the jobs row (best-effort, sync)."""
+    try:
+        from db.database import SessionLocal
+        from db.models import Job
+        with SessionLocal() as s:
+            row = s.query(Job).filter(Job.job_id == str(job_id)).first()
+            if row and not row.discord_message_id:
+                row.discord_message_id = str(discord_message_id)
+                s.commit()
+    except Exception as e:
+        print(f"[DB] Error storing discord_message_id: {e}")
 
 async def fetch_and_build_job_message(job, search_context=""):
     """
@@ -222,17 +308,9 @@ async def process_single_search(search):
         # Post new jobs (limit to 3 per search cycle to avoid spam)
         posted_count = 0
         for job in new_jobs[:3]:
-            # Try to store job in database to prevent duplicates across restarts
-            try:
-                if hasattr(scraper, 'store_job_in_db'):
-                    scraper.store_job_in_db(job)
-            except Exception as db_exc:
-                if 'duplicate' in str(db_exc).lower() or 'unique constraint' in str(db_exc).lower():
-                    print(f"[Real-time] Job already in database: {job.get('id')}")
-                    continue
-                else:
-                    print(f"[Real-time] DB error: {db_exc}")
-                    continue
+            # Save job to DB and get its sequential job_number
+            job_id = str(job.get("id") or job.get("ciphertext") or "")
+            job_number = _save_job_to_db(job)
 
             # BUILD COMPLETE MESSAGE WITH ALL DETAILS
             complete_message = await fetch_and_build_job_message(job, f"{search['keyword']}")
@@ -241,12 +319,20 @@ async def process_single_search(search):
             if complete_message is None:
                 print(f"[Real-time] Skipping job due to auth failure")
                 continue
+
+            # Prepend the job number badge so users can reference it in WhatsApp
+            if job_number and job_number not in (-1, 0):
+                complete_message = f"🔢 **Job #{job_number}**\n" + complete_message
             
             # POST COMPLETE MESSAGE TO DISCORD
             try:
-                await channel.send(complete_message)
+                sent_msg = await channel.send(complete_message)
                 posted_count += 1
-                print(f"[Real-time] Posted NEW job: {job.get('title', 'Unknown')[:50]}...")
+                print(f"[Real-time] Posted NEW job #{job_number}: {job.get('title', 'Unknown')[:50]}...")
+
+                # Store Discord message ID so Module 3 can reply to this post later
+                if job_id and sent_msg:
+                    _store_discord_message_id(job_id, str(sent_msg.id))
 
                 # ── MERIDIAN GATE (after Discord post — never blocks it) ──
                 if _MERIDIAN_AVAILABLE and _meridian_config.MERIDIAN_ENABLED and _meridian_config.WA_GROUP_JID:
@@ -261,7 +347,36 @@ async def process_single_search(search):
 
                         if verdict == "pass":
                             wa_msg = _meridian.build_wa_job_message(job, meridian_result, search["category"], cost_pkr)
+                            # Append job number to MERIDIAN match so user knows which number to "agree"
+                            if job_number and job_number not in (-1, 0):
+                                wa_msg += f"\n\n📌 Reply *agree {job_number}* to draft a proposal for this job"
+                            else:
+                                # job_number failed — re-fetch from DB by job_id
+                                try:
+                                    from db.database import SessionLocal
+                                    from db.models import Job as _Job
+                                    _jid = str(job.get("id") or job.get("ciphertext") or "")
+                                    with SessionLocal() as _s:
+                                        _row = _s.query(_Job).filter(_Job.job_id == _jid).first()
+                                        if _row and _row.job_number:
+                                            wa_msg += f"\n\n📌 Reply *agree {_row.job_number}* to draft a proposal for this job"
+                                except Exception:
+                                    pass
                             asyncio.create_task(_meridian.send_whatsapp(_meridian_config.WA_GROUP_JID, wa_msg))
+
+                        # ── MERIDIAN → #meridian-alerts Discord channel ──
+                        # Fires for BOTH pass and skip verdicts (fire-and-forget)
+                        if _DISCORD_NOTIFIER_AVAILABLE and getattr(_meridian_config, "MERIDIAN_DISCORD_CHANNEL_ID", 0):
+                            _resolved_job_number = job_number if (job_number and job_number not in (-1, 0)) else 0
+                            asyncio.create_task(
+                                _dn_send_meridian(
+                                    job, meridian_result, search["category"],
+                                    cost_pkr=cost_pkr,
+                                    job_number=_resolved_job_number,
+                                    verdict=verdict,
+                                )
+                            )
+                        # Skipped jobs: do NOT send WA messages (reduces noise)
                     except Exception as _me:
                         print(f"[MERIDIAN] Gate error (non-fatal): {_me}")
 
@@ -334,6 +449,9 @@ async def run_advanced_job_searches():
             report = _cost_tracker.flush_cycle_report()
             if report:
                 asyncio.create_task(_meridian.send_whatsapp(_meridian_config.WA_GROUP_JID, report))
+                # Also send to #meridian-alerts
+                if _DISCORD_NOTIFIER_AVAILABLE and getattr(_meridian_config, "MERIDIAN_DISCORD_CHANNEL_ID", 0):
+                    asyncio.create_task(_dn_send_cost_report(report))
         except Exception as _fe:
             print(f"[MERIDIAN] Finance report error: {_fe}")
 
@@ -623,7 +741,119 @@ def debug_job_ids(jobs_data):
 @bot.event
 async def on_ready():
     print(f"Bot is ready. Username: {bot.user}")
+    # Inject bot reference into Discord notifier so it can reach #meridian-alerts
+    if _DISCORD_NOTIFIER_AVAILABLE:
+        _dn_set_bot(bot)
+        ch_id = getattr(_meridian_config, "MERIDIAN_DISCORD_CHANNEL_ID", 0) if _MERIDIAN_AVAILABLE else 0
+        if ch_id:
+            print(f"[DISCORD-NOTIFIER] MERIDIAN alerts → channel #{ch_id}")
+        else:
+            print("[DISCORD-NOTIFIER] MERIDIAN_DISCORD_CHANNEL_ID not set — Discord alerts disabled")
     bot.loop.create_task(run_scrapers_concurrently())
+    bot.loop.create_task(_start_draft_http_server())
+
+
+# ── Module 3: Draft HTTP server ───────────────────────────────────────────────
+# The WhatsApp bridge POSTs here when it receives "agree <job_number>" from WA.
+# Endpoint: POST http://localhost:8765/draft   body: {"job_number": <int>}
+
+DRAFT_SERVER_PORT = 8765
+
+
+async def _handle_draft_request(reader, writer):
+    """
+    Minimal async HTTP handler.
+    Accepts: POST /draft  body: {"job_number": <int>}
+    """
+    try:
+        import json as _json
+        raw = await asyncio.wait_for(reader.read(4096), timeout=5)
+        raw_str = raw.decode("utf-8", errors="ignore")
+
+        # Parse body JSON (skip HTTP headers, grab last non-empty line)
+        body_str = ""
+        parts = raw_str.split("\r\n\r\n", 1)
+        if len(parts) == 2:
+            body_str = parts[1].strip()
+        if not body_str:
+            body_str = raw_str.strip().split("\n")[-1].strip()
+
+        try:
+            payload = _json.loads(body_str)
+        except Exception:
+            writer.write(b"HTTP/1.1 400 Bad Request\r\n\r\n{\"error\":\"invalid json\"}")
+            await writer.drain()
+            writer.close()
+            return
+
+        job_number = payload.get("job_number")
+        if not isinstance(job_number, int) or job_number < 1:
+            writer.write(b"HTTP/1.1 400 Bad Request\r\n\r\n{\"error\":\"job_number must be a positive int\"}")
+            await writer.drain()
+            writer.close()
+            return
+
+        print(f"[PROPOSALS] Draft requested for job #{job_number}")
+
+        # Respond 202 immediately so the bridge doesn't time out
+        writer.write(b"HTTP/1.1 202 Accepted\r\nContent-Type: application/json\r\n\r\n{\"status\":\"generating\"}")
+        await writer.drain()
+        writer.close()
+
+        # Generate and deliver draft asynchronously
+        asyncio.create_task(_generate_and_deliver_draft(job_number))
+
+    except Exception as e:
+        print(f"[PROPOSALS] HTTP handler error: {e}")
+        try:
+            writer.write(b"HTTP/1.1 500 Internal Server Error\r\n\r\n")
+            await writer.drain()
+            writer.close()
+        except Exception:
+            pass
+
+
+async def _generate_and_deliver_draft(job_number: int):
+    """Generate a proposal draft and deliver it to WhatsApp and #meridian-alerts Discord."""
+    try:
+        from proposals.generator import generate_proposal
+        from proposals.whatsapp import send_proposal_via_whatsapp
+        from bot.discord_notifier import send_proposal_discord as _dn_send_proposal
+
+        result = await generate_proposal(job_number)
+
+        # Deliver to WhatsApp (existing behaviour)
+        await send_proposal_via_whatsapp(result)
+
+        # Deliver to #meridian-alerts Discord channel (new)
+        try:
+            if getattr(_meridian_config, "MERIDIAN_DISCORD_CHANNEL_ID", 0) if _MERIDIAN_AVAILABLE else 0:
+                await _dn_send_proposal(result)
+        except Exception as _de:
+            print(f"[PROPOSALS] Discord delivery error (non-fatal): {_de}")
+
+        if result.get("ok"):
+            print(f"[PROPOSALS] Draft for job #{job_number} delivered ✅")
+        else:
+            print(f"[PROPOSALS] Draft for job #{job_number} failed: {result.get('error')}")
+    except Exception as e:
+        print(f"[PROPOSALS] Unexpected error for job #{job_number}: {e}")
+
+
+async def _start_draft_http_server():
+    """Start the draft HTTP server on DRAFT_SERVER_PORT."""
+    await bot.wait_until_ready()
+    try:
+        server = await asyncio.start_server(
+            _handle_draft_request,
+            host="127.0.0.1",
+            port=DRAFT_SERVER_PORT,
+        )
+        print(f"[PROPOSALS] Draft server listening on 127.0.0.1:{DRAFT_SERVER_PORT}")
+        async with server:
+            await server.serve_forever()
+    except Exception as e:
+        print(f"[PROPOSALS] Could not start draft server: {e}")
 
 # @bot.event
 # async def on_message(message):
