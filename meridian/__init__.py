@@ -1,7 +1,7 @@
 # MERIDIAN — AI job relevance gate
 # Exports for easy import from bot/discord_bot.py
 from .engine import run_meridian, get_meridian_verdict
-from .whatsapp import send_whatsapp, build_wa_job_message
+from .whatsapp import send_whatsapp, build_wa_job_message, build_wa_skip_message
 from . import cost_tracker
 
 __all__ = [
@@ -9,5 +9,6 @@ __all__ = [
     "get_meridian_verdict",
     "send_whatsapp",
     "build_wa_job_message",
+    "build_wa_skip_message",
     "cost_tracker",
 ]

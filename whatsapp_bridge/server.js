@@ -12,6 +12,10 @@
  *   GET /status
  *   Returns: { "connected": true|false, "groups": [...] }
  *
+ * Incoming command (WhatsApp group message):
+ *   "agree <job_number>"  →  triggers proposal draft generation
+ *   e.g. "agree 7"        →  generates draft for Job #7
+ *
  * Setup:
  *   npm install
  *   node server.js
@@ -30,11 +34,14 @@ const qrcode    = require("qrcode-terminal");
 const pino      = require("pino");
 const path      = require("path");
 const fs        = require("fs");
+const http      = require("http");
 
 // ─── Config ──────────────────────────────────────────────────
-const PORT         = process.env.WA_BRIDGE_PORT || 3001;
-const SESSION_DIR  = path.join(__dirname, "session");
-const logger       = pino({ level: "silent" }); // suppress Baileys verbose logs
+const PORT              = process.env.WA_BRIDGE_PORT || 3001;
+const SESSION_DIR       = path.join(__dirname, "session");
+const DRAFT_SERVER_PORT = process.env.DRAFT_SERVER_PORT || 8765;  // Python draft endpoint
+const WA_GROUP_JID      = process.env.WA_GROUP_JID || "";         // only listen to this group
+const logger            = pino({ level: "silent" }); // suppress Baileys verbose logs
 
 // ─── State ───────────────────────────────────────────────────
 let sock        = null;
@@ -75,6 +82,80 @@ app.listen(PORT, () => {
   console.log(`[WA Bridge] HTTP server listening on port ${PORT}`);
 });
 
+// ─── Outgoing command: call Python draft server ───────────────
+/**
+ * triggerDraftGeneration(jobNumber)
+ * POSTs to the Python bot's draft HTTP server to kick off proposal generation.
+ */
+function triggerDraftGeneration(jobNumber) {
+  const body = JSON.stringify({ job_number: jobNumber });
+  const options = {
+    hostname: "127.0.0.1",
+    port:     DRAFT_SERVER_PORT,
+    path:     "/draft",
+    method:   "POST",
+    headers:  {
+      "Content-Type":   "application/json",
+      "Content-Length": Buffer.byteLength(body),
+    },
+  };
+
+  const req = http.request(options, (res) => {
+    let data = "";
+    res.on("data", (chunk) => { data += chunk; });
+    res.on("end",  () => {
+      console.log(`[WA Bridge] Draft server responded ${res.statusCode}: ${data.slice(0, 80)}`);
+    });
+  });
+
+  req.on("error", (e) => {
+    console.error(`[WA Bridge] Could not reach draft server (is the Python bot running?): ${e.message}`);
+  });
+
+  req.write(body);
+  req.end();
+}
+
+// ─── Incoming message handler ─────────────────────────────────
+/**
+ * Handle incoming WA messages and look for the "agree <N>" command.
+ * Only acts on messages from the configured WA_GROUP_JID.
+ */
+function handleIncomingMessage(msg) {
+  try {
+    // Only process text messages from the monitored group
+    const fromJid = msg.key.remoteJid || "";
+    const isGroup = fromJid.endsWith("@g.us");
+    if (!isGroup) return;
+
+    // If WA_GROUP_JID is set, only listen to that specific group
+    if (WA_GROUP_JID && fromJid !== WA_GROUP_JID) return;
+
+    // Ignore messages sent by this bot itself
+    if (msg.key.fromMe) return;
+
+    const text = (
+      msg.message?.conversation ||
+      msg.message?.extendedTextMessage?.text ||
+      ""
+    ).trim().toLowerCase();
+
+    // Match: "agree <number>"  e.g. "agree 7" or "agree7"
+    const match = text.match(/^agree\s*(\d+)$/);
+    if (!match) return;
+
+    const jobNumber = parseInt(match[1], 10);
+    if (isNaN(jobNumber) || jobNumber < 1) return;
+
+    console.log(`[WA Bridge] Received 'agree ${jobNumber}' — triggering draft generation`);
+    triggerDraftGeneration(jobNumber);
+
+  } catch (e) {
+    // Non-fatal — never crash the bridge over a bad message
+    console.warn("[WA Bridge] handleIncomingMessage error:", e.message);
+  }
+}
+
 // ─── Baileys socket ──────────────────────────────────────────
 async function startWhatsApp() {
   if (!fs.existsSync(SESSION_DIR)) {
@@ -97,6 +178,14 @@ async function startWhatsApp() {
   // Save credentials whenever they update
   sock.ev.on("creds.update", saveCreds);
 
+  // ── Listen for incoming messages ──────────────────────────
+  sock.ev.on("messages.upsert", ({ messages, type }) => {
+    if (type !== "notify") return;
+    for (const msg of messages) {
+      handleIncomingMessage(msg);
+    }
+  });
+
   // Handle connection lifecycle
   sock.ev.on("connection.update", async (update) => {
     const { connection, lastDisconnect, qr } = update;
@@ -110,6 +199,7 @@ async function startWhatsApp() {
     if (connection === "open") {
       isConnected = true;
       console.log("[WA Bridge] ✅ WhatsApp connected!");
+      console.log(`[WA Bridge] Listening for 'agree <N>' commands from group: ${WA_GROUP_JID || "(all groups)"}`);
 
       // List available groups so user can find their group JID
       try {

@@ -36,10 +36,13 @@ def save_jobs_to_db(jobs_data):
                     continue
 
                 job_fields = {
-                    "job_id":  job_id,
-                    "title":   job["title"],
-                    "budget":  job["budget_numeric"],
+                    "job_id":   job_id,
+                    "title":    job["title"],
+                    "budget":   job["budget_numeric"],
                 }
+
+                if "job_type" in _column_names:
+                    job_fields["job_type"] = job.get("job_type") or job.get("engagement") or None
 
                 # Full description — NOT truncated; Discord message layer handles display length
                 if "description" in _column_names:

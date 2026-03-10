@@ -84,3 +84,38 @@ def build_wa_job_message(job: dict, result: dict, category: str, cost_pkr: float
         f"💰 This job: ₨ {cost_pkr:.4f} PKR"
     )
     return msg
+
+
+def build_wa_skip_message(job: dict, result: dict, category: str, cost_pkr: float = 0.0) -> str:
+    """
+    Build a compact WhatsApp notification for a MERIDIAN-rejected job.
+    """
+    title      = job.get("title") or "Untitled"
+    budget_raw = job.get("budget")
+    job_id     = job.get("id") or job.get("ciphertext") or ""
+
+    clean_id   = str(job_id).lstrip("~") if job_id else ""
+    job_url    = f"https://www.upwork.com/freelance-jobs/apply/~{clean_id}" if clean_id else "N/A"
+    budget_str = f"${budget_raw}" if budget_raw else "Unknown"
+    cat_label  = category.replace("_", " ").title()
+
+    total     = result.get("total_score", "?")
+    domain    = result.get("domain_fit", "?")
+    clarity   = result.get("scope_clarity", "?")
+    tech      = result.get("tech_stack_match", "?")
+    budget_v  = result.get("budget_viability", "?")
+    reasoning = result.get("reasoning", "")
+
+    threshold = getattr(config, "MERIDIAN_THRESHOLD", 60)
+
+    return (
+        f"❌ *MERIDIAN SKIP* — Score: {total}/100 (threshold: {threshold})\n\n"
+        f"*Title:* {title}\n"
+        f"*Budget:* {budget_str}\n"
+        f"*Category:* {cat_label}\n\n"
+        f"*Why it was skipped:*\n{reasoning}\n\n"
+        f"🔗 {job_url}\n\n"
+        f"{'─' * 29}\n"
+        f"Domain: {domain}/40 | Clarity: {clarity}/25 | Tech: {tech}/20 | Budget: {budget_v}/15\n"
+        f"💰 This job: ₨ {cost_pkr:.4f} PKR"
+    )

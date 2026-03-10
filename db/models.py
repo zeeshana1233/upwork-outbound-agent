@@ -8,6 +8,8 @@ Base = declarative_base()
 class Job(Base):
     __tablename__ = "jobs"
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    # Human-readable sequential job number (e.g. 1, 2, 3...) used for WA "agree" command
+    job_number = Column(Integer, unique=True, nullable=True, index=True)
     job_id = Column(String, unique=True, index=True)
     title = Column(String)
     description = Column(Text)
@@ -15,6 +17,9 @@ class Job(Base):
     skills = Column(Text)
     client = Column(String)
     posted_at = Column(DateTime, default=datetime.datetime.utcnow)
+    job_type         = Column(String,   nullable=True)   # 'hourly' | 'fixed_price'
+    # Discord message ID — used by Module 3 to reply to the original post
+    discord_message_id = Column(String, nullable=True)
     # MERIDIAN scoring columns (nullable — NULL means not yet processed)
     meridian_score   = Column(Integer,  nullable=True)
     meridian_verdict = Column(String,   nullable=True)
@@ -51,6 +56,19 @@ class MeridianCostLog(Base):
     cost_usd        = Column(Float,    default=0.0)
     cost_pkr        = Column(Float,    default=0.0)
     session_total_pkr = Column(Float,  default=0.0)
+
+class Proposal(Base):
+    """Module 3 — auto-generated proposal drafts."""
+    __tablename__ = "proposals"
+    id              = Column(Integer,  primary_key=True, autoincrement=True)
+    job_id          = Column(String,   nullable=False, index=True)   # FK to jobs.job_id (soft ref)
+    job_number      = Column(Integer,  nullable=True,  index=True)   # human-readable job number
+    draft_text      = Column(Text,     nullable=False)
+    status          = Column(String,   default="draft")              # draft | approved | submitted | rejected
+    generated_at    = Column(DateTime, default=datetime.datetime.utcnow)
+    submitted_at    = Column(DateTime, nullable=True)
+    feedback        = Column(Text,     nullable=True)
+
 
 # New model for BHW threads
 class BHWThread(Base):

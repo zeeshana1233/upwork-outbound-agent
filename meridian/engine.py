@@ -160,12 +160,22 @@ async def run_meridian(job: dict, category: str) -> dict:
     else:
         skills_str = str(raw_skills)
 
-    # Build budget string
-    budget_raw = job.get("budget")
-    if budget_raw:
-        budget_str = f"${budget_raw}"
+    # Build budget string — budget_display already has $ prefix from scraper;
+    # fall back to budget_numeric if coming from a DB-sourced dict.
+    budget_raw = job.get("budget") or ""
+    job_type   = (job.get("job_type") or job.get("engagement") or "").lower()
+
+    if budget_raw and str(budget_raw) not in ("", "0", "0.0", "Not specified"):
+        # budget_display already contains $ — don't double-prepend
+        display = str(budget_raw) if str(budget_raw).startswith("$") else f"${budget_raw}"
+        if "hourly" in job_type or "/hr" in display:
+            budget_str = f"{display} (Hourly)"
+        elif "fixed" in job_type:
+            budget_str = f"{display} (Fixed Price)"
+        else:
+            budget_str = display
     else:
-        budget_str = "unknown"
+        budget_str = "Not specified"
 
     prompt = MERIDIAN_PROMPT_TEMPLATE.format(
         category_reference_summary = category_summary,
@@ -175,6 +185,20 @@ async def run_meridian(job: dict, category: str) -> dict:
         budget      = budget_str,
         threshold   = threshold,
     )
+
+    # Save exact prompt to file on every call (overwrites previous)
+    try:
+        import os as _os
+        _prompt_path = _os.path.join(_os.path.dirname(_os.path.dirname(__file__)), "LAST_MERIDIAN_PROMPT.md")
+        with open(_prompt_path, "w", encoding="utf-8") as _f:
+            _f.write(f"# LAST MERIDIAN PROMPT\n")
+            _f.write(f"Job: {(job.get('title') or '?')[:120]}\n")
+            _f.write(f"Category: {category}\n")
+            _f.write(f"Saved: {datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')} UTC\n")
+            _f.write(f"\n---\n\n")
+            _f.write(prompt)
+    except Exception as _e:
+        print(f"[MERIDIAN] Could not write prompt file: {_e}")
 
     try:
         async with _gpt_semaphore:

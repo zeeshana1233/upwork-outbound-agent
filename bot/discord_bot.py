@@ -335,7 +335,7 @@ async def process_single_search(search):
                     _store_discord_message_id(job_id, str(sent_msg.id))
 
                 # ── MERIDIAN GATE (after Discord post — never blocks it) ──
-                if _MERIDIAN_AVAILABLE and _meridian_config.MERIDIAN_ENABLED and _meridian_config.WA_GROUP_JID:
+                if _MERIDIAN_AVAILABLE and _meridian_config.MERIDIAN_ENABLED and getattr(_meridian_config, "MERIDIAN_DISCORD_CHANNEL_ID", 0):
                     try:
                         meridian_result = await _meridian.run_meridian(job, search["category"])
                         score   = meridian_result.get("total_score", -1)
@@ -345,28 +345,9 @@ async def process_single_search(search):
                         asyncio.create_task(_save_meridian_result(job.get("id"), meridian_result))
                         print(f"[MERIDIAN] '{job.get('title','?')[:40]}' → {score}/100 ({verdict.upper()}) ₨{cost_pkr:.4f}")
 
-                        if verdict == "pass":
-                            wa_msg = _meridian.build_wa_job_message(job, meridian_result, search["category"], cost_pkr)
-                            # Append job number to MERIDIAN match so user knows which number to "agree"
-                            if job_number and job_number not in (-1, 0):
-                                wa_msg += f"\n\n📌 Reply *agree {job_number}* to draft a proposal for this job"
-                            else:
-                                # job_number failed — re-fetch from DB by job_id
-                                try:
-                                    from db.database import SessionLocal
-                                    from db.models import Job as _Job
-                                    _jid = str(job.get("id") or job.get("ciphertext") or "")
-                                    with SessionLocal() as _s:
-                                        _row = _s.query(_Job).filter(_Job.job_id == _jid).first()
-                                        if _row and _row.job_number:
-                                            wa_msg += f"\n\n📌 Reply *agree {_row.job_number}* to draft a proposal for this job"
-                                except Exception:
-                                    pass
-                            asyncio.create_task(_meridian.send_whatsapp(_meridian_config.WA_GROUP_JID, wa_msg))
-
                         # ── MERIDIAN → #meridian-alerts Discord channel ──
                         # Fires for BOTH pass and skip verdicts (fire-and-forget)
-                        if _DISCORD_NOTIFIER_AVAILABLE and getattr(_meridian_config, "MERIDIAN_DISCORD_CHANNEL_ID", 0):
+                        if _DISCORD_NOTIFIER_AVAILABLE:
                             _resolved_job_number = job_number if (job_number and job_number not in (-1, 0)) else 0
                             asyncio.create_task(
                                 _dn_send_meridian(
@@ -376,7 +357,6 @@ async def process_single_search(search):
                                     verdict=verdict,
                                 )
                             )
-                        # Skipped jobs: do NOT send WA messages (reduces noise)
                     except Exception as _me:
                         print(f"[MERIDIAN] Gate error (non-fatal): {_me}")
 
@@ -444,14 +424,11 @@ async def run_advanced_job_searches():
     print(f"[Real-time] Completed scan: {success_count} OK, {error_count} errors")
 
     # ── MERIDIAN CYCLE FINANCE REPORT ───────────────────────────
-    if _MERIDIAN_AVAILABLE and _meridian_config.MERIDIAN_ENABLED and _meridian_config.WA_GROUP_JID:
+    if _MERIDIAN_AVAILABLE and _meridian_config.MERIDIAN_ENABLED and getattr(_meridian_config, "MERIDIAN_DISCORD_CHANNEL_ID", 0):
         try:
             report = _cost_tracker.flush_cycle_report()
-            if report:
-                asyncio.create_task(_meridian.send_whatsapp(_meridian_config.WA_GROUP_JID, report))
-                # Also send to #meridian-alerts
-                if _DISCORD_NOTIFIER_AVAILABLE and getattr(_meridian_config, "MERIDIAN_DISCORD_CHANNEL_ID", 0):
-                    asyncio.create_task(_dn_send_cost_report(report))
+            if report and _DISCORD_NOTIFIER_AVAILABLE:
+                asyncio.create_task(_dn_send_cost_report(report))
         except Exception as _fe:
             print(f"[MERIDIAN] Finance report error: {_fe}")
 
@@ -475,7 +452,7 @@ from .job_search_keywords import ADVANCED_JOB_SEARCHES
 # The message-reading commands are all commented out, so no privileged intents
 # (Members / Message Content) are required — default is enough.
 _intents = discord.Intents.default()
-_intents.message_content = False   # not reading user messages
+_intents.message_content = True   # needed to read "agree N" commands
 bot = commands.Bot(command_prefix="!", intents=_intents)
 scraper = UpworkScraper()
 
@@ -753,6 +730,29 @@ async def on_ready():
     bot.loop.create_task(_start_draft_http_server())
 
 
+@bot.event
+async def on_message(message):
+    """Listen for 'agree N' in #meridian-alerts and trigger proposal draft generation."""
+    # Ignore the bot's own messages
+    if message.author == bot.user:
+        await bot.process_commands(message)
+        return
+
+    # Only act in the MERIDIAN alerts channel
+    meridian_ch_id = getattr(_meridian_config, "MERIDIAN_DISCORD_CHANNEL_ID", 0) if _MERIDIAN_AVAILABLE else 0
+    if meridian_ch_id and message.channel.id == int(meridian_ch_id):
+        m = re.match(r"^\s*agree\s+(\d+)\s*$", message.content.strip(), re.IGNORECASE)
+        if m:
+            job_number = int(m.group(1))
+            await message.channel.send(
+                f"Got it — generating proposal draft for Job #{job_number}..."
+            )
+            asyncio.create_task(_generate_and_deliver_draft(job_number))
+            return  # don't fall through to process_commands
+
+    await bot.process_commands(message)
+
+
 # ── Module 3: Draft HTTP server ───────────────────────────────────────────────
 # The WhatsApp bridge POSTs here when it receives "agree <job_number>" from WA.
 # Endpoint: POST http://localhost:8765/draft   body: {"job_number": <int>}
@@ -814,21 +814,16 @@ async def _handle_draft_request(reader, writer):
 
 
 async def _generate_and_deliver_draft(job_number: int):
-    """Generate a proposal draft and deliver it to WhatsApp and #meridian-alerts Discord."""
+    """Generate a proposal draft and deliver it to #meridian-alerts Discord."""
     try:
         from proposals.generator import generate_proposal
-        from proposals.whatsapp import send_proposal_via_whatsapp
         from bot.discord_notifier import send_proposal_discord as _dn_send_proposal
 
         result = await generate_proposal(job_number)
 
-        # Deliver to WhatsApp (existing behaviour)
-        await send_proposal_via_whatsapp(result)
-
-        # Deliver to #meridian-alerts Discord channel (new)
+        # Deliver to #meridian-alerts Discord channel
         try:
-            if getattr(_meridian_config, "MERIDIAN_DISCORD_CHANNEL_ID", 0) if _MERIDIAN_AVAILABLE else 0:
-                await _dn_send_proposal(result)
+            await _dn_send_proposal(result)
         except Exception as _de:
             print(f"[PROPOSALS] Discord delivery error (non-fatal): {_de}")
 
