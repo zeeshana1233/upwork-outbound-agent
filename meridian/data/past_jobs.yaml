@@ -1,4 +1,4 @@
-# MERIDIAN reference corpus — 16 entries
+# MERIDIAN reference corpus — 51 entries
 # Category names must match exactly the "category" field in job_search_keywords.py
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -12,6 +12,21 @@
   description: "Develop a scalable software platform managing and orchestrating 30+ Android emulators. Full GPS emulation, Google Maps navigation automation, parallel device control."
   category: Android Automation
   skills: ["Python", "ADB", "Android Emulator", "GPS Emulation", "Multiprocessing", "Android SDK"]
+
+- title: "Android Instagram Automation Bot"
+  description: "Run Instagram automation directly on Android devices — real device fingerprints for maximum account safety, automating follows, DMs, and engagement at scale."
+  category: Android Automation
+  skills: ["Python", "Android", "ADB", "Instagram Automation", "Real Device"]
+
+- title: "Android Real Device Instagram Automation Bot"
+  description: "Instagram automation running on physical Android hardware — leveraging real device signals and genuine app behavior to minimize detection risk at scale."
+  category: Android Automation
+  skills: ["Python", "Android", "ADB", "Appium", "Instagram Automation", "Real Device"]
+
+- title: "Facebook Marketplace Bot (Android)"
+  description: "Android-based automation for Facebook Marketplace — auto-listing products, responding to buyer messages, and managing listings across multiple accounts."
+  category: Android Automation
+  skills: ["Python", "Android", "ADB", "Facebook Marketplace", "Automation"]
 
 # ─── STEALTH AUTOMATION ──────────────────────────────────────────────────────
 - title: "Incogniton Automation Bot Development"
@@ -44,6 +59,56 @@
   category: Stealth Automation
   skills: ["Python", "Selenium", "LinkedIn Automation", "Twitter Automation", "Browser Profiles"]
 
+- title: "LinkedIn Automation System for Outreach"
+  description: "Automate LinkedIn connection requests, follow-ups, and message sequences for B2B outreach campaigns while mimicking natural human behavior to avoid detection."
+  category: Stealth Automation
+  skills: ["Python", "LinkedIn Automation", "Outreach", "Human Emulation", "Anti-Detection"]
+
+- title: "Instagram Automation Bot"
+  description: "Automate Instagram growth and engagement actions including follows, likes, comments, and DMs — with anti-detection measures built in for account safety."
+  category: Stealth Automation
+  skills: ["Python", "Instagram Automation", "Bot Development", "Anti-Detection"]
+
+- title: "Twitter Warmup Bot"
+  description: "Gradually warm up new or aged Twitter/X accounts through natural engagement patterns — building account trust and reducing suspension risk before scaling activity."
+  category: Stealth Automation
+  skills: ["Python", "Twitter Automation", "Account Warming", "Human Emulation", "Anti-Detection"]
+
+- title: "Instagram Mother Slave Method Bot"
+  description: "Implement the Mother/Slave Instagram growth strategy at scale — main accounts drive traffic while a network of feeder accounts funnel followers through coordinated automation."
+  category: Stealth Automation
+  skills: ["Python", "Instagram Automation", "Multi-Account Management", "Growth Strategy", "Anti-Detection"]
+
+- title: "Spotify Streaming Automation Bot"
+  description: "Automate Spotify streams across tracks and playlists — managing accounts, proxies, and playback behavior to simulate genuine listening activity."
+  category: Stealth Automation
+  skills: ["Python", "Spotify Automation", "Stream Bot", "Proxy Management", "Anti-Detection"]
+
+- title: "YouTube Engagement Automation System"
+  description: "Drive YouTube engagement metrics — automate views, likes, comments, and watch time across videos using human-emulated browser sessions and rotating proxies."
+  category: Stealth Automation
+  skills: ["Python", "YouTube Automation", "Engagement Bot", "Proxy Rotation", "Browser Automation"]
+
+- title: "Instagram Human Emulation System"
+  description: "Advanced Instagram automation built around convincing human behavior simulation — variable timing, randomized actions, and realistic session patterns to avoid detection."
+  category: Stealth Automation
+  skills: ["Python", "Instagram Automation", "Human Emulation", "Anti-Detection", "Behavioral Simulation"]
+
+- title: "Google CTR Automation Bot"
+  description: "Automate Google search click-through rate signals — simulate organic search behavior to influence CTR metrics for targeted keywords and URLs."
+  category: Stealth Automation
+  skills: ["Python", "SEO Automation", "CTR Bot", "Browser Automation", "Proxy Rotation"]
+
+- title: "LinkedIn Post Liker App"
+  description: "Automated LinkedIn post engagement tool — like posts from target feeds, connections, or hashtags to boost visibility and maintain an active presence across accounts."
+  category: Stealth Automation
+  skills: ["Python", "LinkedIn Automation", "Engagement Bot", "Multi-Account", "Anti-Detection"]
+
+- title: "Ticketmaster Mass Ticket Purchasing Bot"
+  description: "High-speed bot for purchasing tickets on Ticketmaster at scale — handles queue bypass, account rotation, and checkout automation for high-demand event drops."
+  category: Stealth Automation
+  skills: ["Python", "Ticketmaster Automation", "Checkout Bot", "Queue Management", "Anti-Detection"]
+
 # ─── SOCIAL MEDIA & SMM ──────────────────────────────────────────────────────
 - title: "Automate SMM Panel API Purchases for Twitter & Telegram Engagement"
   description: "Build a private automation platform integrating SMM panel API to automate purchasing of likes, views, followers for Twitter and Telegram. Backend logic with optional frontend dashboard."
@@ -55,11 +120,106 @@
   category: Social Media & SMM
   skills: ["Python", "Automation", "E-commerce", "Multi-platform", "Backend Development"]
 
+- title: "PurePeak TikTok Shop Automation"
+  description: "Automate TikTok Shop workflows for the PurePeak brand — product listing management, order processing, and customer interaction flows."
+  category: Social Media & SMM
+  skills: ["Python", "TikTok Shop API", "E-Commerce", "Automation"]
+
+- title: "TTinit TikTok Shop Automation SaaS"
+  description: "Full SaaS platform built around TikTok Shop automation — multi-account management, bulk operations, and a dashboard for sellers to run their shops on autopilot."
+  category: Social Media & SMM
+  skills: ["Python", "TikTok Shop API", "SaaS", "Multi-Account Management", "Dashboard"]
+
+- title: "Twitter Automation Bot"
+  description: "Automate Twitter/X account actions — posting, liking, following, retweeting, and DM outreach — across single or multiple accounts with human-like behavior patterns."
+  category: Social Media & SMM
+  skills: ["Python", "Twitter API", "Bot Development", "Human Emulation"]
+
+- title: "Reddit Karma Farming Bot Demo"
+  description: "Demonstrate automated Reddit account warming — upvoting, commenting, and posting across subreddits to build karma and establish account credibility."
+  category: Social Media & SMM
+  skills: ["Python", "Reddit API", "Account Warming", "Bot Development"]
+
+- title: "SMM Integrated Instagram Automation System"
+  description: "Full Instagram automation system integrated with an SMM panel — manage client orders, automate delivery of followers, likes, and comments through a unified backend."
+  category: Social Media & SMM
+  skills: ["Python", "Instagram Automation", "SMM Panel Integration", "Order Management"]
+
+- title: "Instagram Follow/Unfollow Accounts Bot"
+  description: "Targeted follow/unfollow automation for Instagram growth — follow users from competitor accounts or hashtags, then unfollow non-followers on a schedule."
+  category: Social Media & SMM
+  skills: ["Python", "Instagram Automation", "Growth Hacking", "Account Management"]
+
+- title: "Reddit Karma Farming Bot"
+  description: "Automated Reddit karma accumulation system — runs posting and voting sequences across targeted subreddits to build high-karma accounts ready for marketing use."
+  category: Social Media & SMM
+  skills: ["Python", "Reddit API", "Karma Farming", "Account Management"]
+
+- title: "Facebook Automation Bot"
+  description: "Automate Facebook account actions — group posting, friend requests, page interactions, and content scheduling across single or multiple accounts."
+  category: Social Media & SMM
+  skills: ["Python", "Facebook Automation", "Multi-Account", "Bot Development"]
+
+- title: "Snapchat Automation System"
+  description: "Automate Snapchat account actions — story views, friend adds, direct snaps, and engagement sequences for growth and outreach campaigns."
+  category: Social Media & SMM
+  skills: ["Python", "Snapchat Automation", "Bot Development", "Human Emulation"]
+
+- title: "Threads API Panel System"
+  description: "Backend panel system for managing Threads accounts and automating actions via API — built for agencies running multiple client accounts from a single interface."
+  category: Social Media & SMM
+  skills: ["Python", "Threads API", "Panel System", "Multi-Account Management"]
+
+- title: "Instagram Automation Project"
+  description: "Comprehensive Instagram automation solution covering account warmup, engagement, DM outreach, and growth — documented and delivered as a full client project."
+  category: Social Media & SMM
+  skills: ["Python", "Instagram Automation", "Full-Stack Automation", "Account Management"]
+
+- title: "TikTok Live Comment Bot & 24/7 DM Auto-Responder"
+  description: "Automate TikTok Live comment interactions and keep DM responses running around the clock — designed for creators and brands managing high-volume audience engagement."
+  category: Social Media & SMM
+  skills: ["Python", "TikTok Automation", "Live Bot", "DM Automation", "Engagement"]
+
 # ─── AUTOMATION ──────────────────────────────────────────────────────────────
 - title: "Backup Wistia Videos and Metadata to Google Drive"
   description: "Export ~1300 Wistia videos with original media, thumbnails, transcripts, and metadata to Google Drive using an automated script."
   category: Automation
   skills: ["Python", "Wistia API", "Google Drive API", "Automation", "API Integration"]
+
+- title: "Telegram New Automation Bot"
+  description: "Automate Telegram account actions including messaging, group interactions, and channel management at scale using Python-based bot infrastructure."
+  category: Automation
+  skills: ["Python", "Telegram API", "Bot Development", "Automation"]
+
+- title: "WhatsApp Automation Bot"
+  description: "Automate WhatsApp messaging workflows — bulk outreach, auto-replies, contact management, and campaign sequences using real device or web-based automation."
+  category: Automation
+  skills: ["Python", "WhatsApp Automation", "Messaging Bot", "Bulk Outreach"]
+
+- title: "WhatsApp Messaging Bot"
+  description: "Dedicated WhatsApp bot for structured messaging campaigns — contact list management, message scheduling, and automated follow-up sequences."
+  category: Automation
+  skills: ["Python", "WhatsApp API", "Messaging Automation", "Campaign Management"]
+
+- title: "Telegram News Automation System"
+  description: "Aggregate news from multiple sources and auto-publish to Telegram channels on a schedule — with content filtering, formatting, and multi-channel distribution."
+  category: Automation
+  skills: ["Python", "Telegram API", "News Aggregation", "Content Automation"]
+
+- title: "Ads RPA Launcher Project"
+  description: "RPA-driven system for launching and managing ad campaigns — automates the repetitive setup, targeting configuration, and budget management steps across ad platforms."
+  category: Automation
+  skills: ["Python", "RPA", "Ad Automation", "Campaign Management", "Browser Automation"]
+
+- title: "Kalshi Trading Bot"
+  description: "Automated trading bot for Kalshi prediction markets — monitors market conditions, executes trades based on defined strategies, and manages positions autonomously."
+  category: Automation
+  skills: ["Python", "Kalshi API", "Trading Bot", "Market Automation", "Strategy Execution"]
+
+- title: "MyBookie Betting Automation Bot"
+  description: "Automated betting bot for MyBookie — monitors lines, places bets based on predefined criteria, and manages account sessions for consistent execution."
+  category: Automation
+  skills: ["Python", "Betting Automation", "RPA", "Browser Automation", "Strategy Execution"]
 
 # ─── WEB DEVELOPMENT ─────────────────────────────────────────────────────────
 - title: "Full-Stack Django Developer with CI/CD and Git Expertise"
@@ -77,9 +237,19 @@
   category: Web Development
   skills: ["PHP", "CodeIgniter", "PHP 7 Upgrade"]
 
+- title: "Petla: Vet Appointment Scheduling Platform"
+  description: "Web platform connecting pet owners with veterinarians — online booking, appointment management, reminders, and vet profile listings."
+  category: Web Development
+  skills: ["Web Development", "Scheduling System", "Booking Platform", "Full-Stack"]
+
+- title: "Actuary List: Job Listing for Actuarial"
+  description: "Niche job board platform for the actuarial profession — job postings, candidate profiles, search filtering, and employer dashboards."
+  category: Web Development
+  skills: ["Web Development", "Job Board", "Full-Stack", "Search & Filtering"]
+
 # ─── AI AUTOMATION ───────────────────────────────────────────────────────────
 - title: "Developer — Automated Content Creation with ChatGPT4 API"
-  description: "Build a solution automating article generation using OpenAI ChatGPT4 API. Combines content scraping and AI generation pipeline."
+  description: "Build a solution automating article generation using OpenAI ChatGPT4 API. Combines content automation and AI generation pipeline."
   category: AI Automation
   skills: ["Python", "OpenAI API", "ChatGPT", "Content Automation", "Pipeline Automation"]
 
@@ -87,3 +257,8 @@
   description: "Add AI capabilities to a legal contract management app. Allow users to query contracts using ChatGPT/Jasper AI."
   category: AI Automation
   skills: ["Python", "OpenAI API", "ChatGPT", "Legal Tech", "AI Integration"]
+
+- title: "FaceApp AI Image Automation Pipeline"
+  description: "Automated pipeline for processing images through FaceApp AI filters at scale — bulk input, transformation, and output management for content production workflows."
+  category: AI Automation
+  skills: ["Python", "Image Processing", "AI Pipeline", "Automation", "FaceApp"]
