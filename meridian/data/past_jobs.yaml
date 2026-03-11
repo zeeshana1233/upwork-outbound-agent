@@ -1,4 +1,4 @@
-# MERIDIAN reference corpus — 22 entries
+# MERIDIAN reference corpus — 16 entries
 # Category names must match exactly the "category" field in job_search_keywords.py
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -56,31 +56,6 @@
   skills: ["Python", "Automation", "E-commerce", "Multi-platform", "Backend Development"]
 
 # ─── AUTOMATION ──────────────────────────────────────────────────────────────
-- title: "Data Crawling and Architecture Development"
-  description: "Python and Django. Crawl large amounts of data from multiple sources. Parallelise crawling, schedule crawl jobs, and design the overall architecture."
-  category: Automation
-  skills: ["Python", "Django", "Web Scraping", "Data Pipeline", "Parallel Processing", "Scheduling"]
-
-- title: "LinkedIn Profile Scraper"
-  description: "Extract and organise LinkedIn profile data: name, job title, connections count, education, employment history into a consistent structured format."
-  category: Automation
-  skills: ["Python", "LinkedIn Scraper", "Data Extraction", "Web Scraping"]
-
-- title: "LinkedIn Profile and Company Scraper by Country"
-  description: "NodeJS or Python scraper for LinkedIn profiles and company pages filtered by country. Store to MongoDB. Output matches provided JSON schema."
-  category: Automation
-  skills: ["Python", "Node.js", "LinkedIn Scraping", "MongoDB", "Web Scraping"]
-
-- title: "Scrape Product Details From One Website"
-  description: "Scrape product images, prices, descriptions and structured fields from a single e-commerce website. Deliver as structured CSV or JSON."
-  category: Automation
-  skills: ["Python", "BeautifulSoup", "Selenium", "Web Scraping", "Data Extraction"]
-
-- title: "Scraping Tweets and Save to SQL Database"
-  description: "Scrape all tweets from a list of specific Twitter fact accounts. Store results in SQL database. Handle Twitter rate limits cleanly."
-  category: Automation
-  skills: ["Python", "Twitter API", "SQL", "Web Scraping", "PostgreSQL"]
-
 - title: "Backup Wistia Videos and Metadata to Google Drive"
   description: "Export ~1300 Wistia videos with original media, thumbnails, transcripts, and metadata to Google Drive using an automated script."
   category: Automation
@@ -106,7 +81,7 @@
 - title: "Developer — Automated Content Creation with ChatGPT4 API"
   description: "Build a solution automating article generation using OpenAI ChatGPT4 API. Combines content scraping and AI generation pipeline."
   category: AI Automation
-  skills: ["Python", "OpenAI API", "ChatGPT", "Content Automation", "Web Scraping"]
+  skills: ["Python", "OpenAI API", "ChatGPT", "Content Automation", "Pipeline Automation"]
 
 - title: "ChatGPT OpenAI Developer — Legal Contract Management AI"
   description: "Add AI capabilities to a legal contract management app. Allow users to query contracts using ChatGPT/Jasper AI."
