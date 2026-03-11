@@ -1,5 +1,5 @@
-# MERIDIAN reference corpus
-# Active categories: Android Automation | Stealth Automation | Automation
+# MERIDIAN reference corpus — 22 entries
+# Category names must match exactly the "category" field in job_search_keywords.py
 # ─────────────────────────────────────────────────────────────────────────────
 
 # ─── ANDROID AUTOMATION ─────────────────────────────────────────────────────
@@ -39,20 +39,21 @@
   category: Stealth Automation
   skills: ["Python", "Selenium", "Bot Maintenance", "Browser Automation"]
 
+- title: "Build a LinkedIn Bot"
+  description: "Build an app automating LinkedIn activities: connection requests, messaging, profile interactions using Selenium multi-account browser management."
+  category: Stealth Automation
+  skills: ["Python", "Selenium", "LinkedIn Automation", "Twitter Automation", "Browser Profiles"]
+
+# ─── SOCIAL MEDIA & SMM ──────────────────────────────────────────────────────
 - title: "Automate SMM Panel API Purchases for Twitter & Telegram Engagement"
   description: "Build a private automation platform integrating SMM panel API to automate purchasing of likes, views, followers for Twitter and Telegram. Backend logic with optional frontend dashboard."
-  category: Stealth Automation
+  category: Social Media & SMM
   skills: ["Python", "API Integration", "SMM Panel", "Twitter API", "Telegram Bot", "Backend Development"]
 
-- title: "Build a LinkedIn Bot"
-  description: "Build an app automating LinkedIn activities: connection requests, messaging, profile interactions. Multi-account browser automation."
-  category: Stealth Automation
-  skills: ["Python", "Selenium", "LinkedIn Automation", "Browser Profiles"]
-
-- title: "Project Zuckerberg — Multi-Platform Social Automation"
-  description: "E-commerce company with multiple websites needs a software engineer for multi-platform automation across social and e-commerce channels using anti-detect browsers and multi-account management."
-  category: Stealth Automation
-  skills: ["Python", "Automation", "Multi-platform", "Browser Profiles", "Anti-detect"]
+- title: "Project Zuckerberg — Multi-Platform E-commerce Automation"
+  description: "E-commerce company with multiple websites needs a software engineer for multi-platform automation across social and e-commerce channels."
+  category: Social Media & SMM
+  skills: ["Python", "Automation", "E-commerce", "Multi-platform", "Backend Development"]
 
 # ─── AUTOMATION ──────────────────────────────────────────────────────────────
 - title: "Data Crawling and Architecture Development"
@@ -85,22 +86,29 @@
   category: Automation
   skills: ["Python", "Wistia API", "Google Drive API", "Automation", "API Integration"]
 
+# ─── WEB DEVELOPMENT ─────────────────────────────────────────────────────────
 - title: "Full-Stack Django Developer with CI/CD and Git Expertise"
-  description: "Develop and maintain web applications using Django and Python. Covers back-end, database management, REST API development, and CI/CD pipeline automation."
-  category: Automation
-  skills: ["Python", "Django", "CI/CD", "Git", "REST API", "PostgreSQL"]
+  description: "Develop and maintain web applications using Django, Python, and JavaScript frameworks (React/Angular). Covers front-end, back-end, database management, and CI/CD pipeline setup."
+  category: Web Development
+  skills: ["Python", "Django", "React", "Angular", "CI/CD", "Git", "REST API", "JavaScript"]
 
 - title: "AppSeed Python AI/ML Tool — Query SQLite, PostgreSQL, PDF, CSV"
   description: "Build a Python tool querying multiple data sources (SQLite, PostgreSQL, PDF, CSV) through an AI/ML query interface. Long-term engagement with iterative delivery."
-  category: Automation
+  category: Web Development
   skills: ["Python", "PostgreSQL", "SQLite", "LangChain", "OpenAI", "Data Pipelines", "API"]
 
+- title: "PHP Upgrade — Outdated CodeIgniter Site to PHP 7"
+  description: "Upgrade an outdated CodeIgniter application to PHP 7. No new feature work."
+  category: Web Development
+  skills: ["PHP", "CodeIgniter", "PHP 7 Upgrade"]
+
+# ─── AI AUTOMATION ───────────────────────────────────────────────────────────
 - title: "Developer — Automated Content Creation with ChatGPT4 API"
   description: "Build a solution automating article generation using OpenAI ChatGPT4 API. Combines content scraping and AI generation pipeline."
-  category: Automation
+  category: AI Automation
   skills: ["Python", "OpenAI API", "ChatGPT", "Content Automation", "Web Scraping"]
 
 - title: "ChatGPT OpenAI Developer — Legal Contract Management AI"
-  description: "Add AI capabilities to a legal contract management app. Allow users to query contracts using ChatGPT/Jasper AI. Python backend automation."
-  category: Automation
+  description: "Add AI capabilities to a legal contract management app. Allow users to query contracts using ChatGPT/Jasper AI."
+  category: AI Automation
   skills: ["Python", "OpenAI API", "ChatGPT", "Legal Tech", "AI Integration"]
