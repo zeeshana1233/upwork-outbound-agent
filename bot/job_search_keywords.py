@@ -85,6 +85,13 @@ ADVANCED_JOB_SEARCHES = [
         "channel_id": 1359407667692572713,
         "filters": {}
     },
+        {
+        "category": "Automation",
+        "keyword": "Android Accessibility Service",
+        "query": "Android Accessibility Service",
+        "channel_id": 1359040738507358340,
+        "filters": {}
+    },
 
     # ─── STEALTH AUTOMATION ──────────────────────────────────────────────────
     # Channel: #stealth-mode
@@ -145,13 +152,7 @@ ADVANCED_JOB_SEARCHES = [
         "channel_id": 1359040879121403965,
         "filters": {}
     },
-    {
-        "category": "Stealth Automation",
-        "keyword": "Fingerprint Spoofing",
-        "query": "title:(fingerprint spoofing) OR description:(fingerprint spoof)",
-        "channel_id": 1359040879121403965,
-        "filters": {}
-    },
+
 
     # ─── SOCIAL MEDIA AUTOMATION & SMM ───────────────────────────────────────
     # Channel: #smm-bots
@@ -421,7 +422,11 @@ ADVANCED_JOB_SEARCHES = [
         "filters": {}
     },
 
-    # ─── GENERAL AUTOMATION ──────────────────────────────────────────────────
+    # ─── SCRAPING ────────────────────────────────────────────────────────────
+    # No active keywords — corpus-only category (past work reference for MERIDIAN).
+    # Enable and assign a channel_id here if scraping jobs are re-activated in future.
+
+    # ─── GENRAL AUTOMATION ──────────────────────────────────────────────────
     # Channel: #automation
     # Catch-all for browser automation, bot scripting, and accessibility-based automation.
     {
@@ -445,13 +450,7 @@ ADVANCED_JOB_SEARCHES = [
         "channel_id": 1359040738507358340,
         "filters": {}
     },
-    {
-        "category": "Automation",
-        "keyword": "Android Accessibility Service",
-        "query": "Android Accessibility Service",
-        "channel_id": 1359040738507358340,
-        "filters": {}
-    },
+
     {
         "category": "Automation",
         "keyword": "Script Automation",
