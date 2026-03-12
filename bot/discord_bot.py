@@ -119,7 +119,66 @@ def _store_discord_message_id(job_id: str, discord_message_id: str):
     except Exception as e:
         print(f"[DB] Error storing discord_message_id: {e}")
 
-async def fetch_and_build_job_message(job, search_context=""):
+
+def _get_relevant_past_jobs(category: str, skills: list) -> list:
+    """
+    Sync: query PastJob table for the given category, score by skill overlap,
+    return top-2 matches as dicts {title, skills, reference_url}.
+    Called via run_in_executor so it never blocks the event loop.
+    """
+    try:
+        import json as _json
+        from db.database import SessionLocal
+        from db.models import PastJob
+        with SessionLocal() as s:
+            past = (
+                s.query(PastJob)
+                .filter(PastJob.category == category)
+                .order_by(PastJob.weight.desc())
+                .all()
+            )
+    except Exception as e:
+        print(f"[PastJobs] DB error: {e}")
+        return []
+
+    if not past:
+        return []
+
+    # Score each entry by skill overlap with the incoming job
+    incoming_skills = {sk.lower() for sk in (skills or [])}
+    scored = []
+    for p in past:
+        try:
+            pskills = _json.loads(p.skills) if p.skills else []
+        except Exception:
+            pskills = []
+        overlap = len(incoming_skills & {s.lower() for s in pskills})
+        scored.append((overlap, p))
+
+    scored.sort(key=lambda x: x[0], reverse=True)
+    results = []
+    for _, p in scored[:2]:
+        try:
+            pskills = _json.loads(p.skills) if p.skills else []
+        except Exception:
+            pskills = []
+        results.append({
+            "title":         p.title,
+            "skills":        pskills,
+            "reference_url": p.reference_url,
+        })
+    return results
+
+
+async def _fetch_relevant_past_jobs(category: str, skills: list) -> list:
+    """Async wrapper — runs the sync DB query in a thread-pool executor."""
+    loop = asyncio.get_event_loop()
+    return await loop.run_in_executor(
+        None, _get_relevant_past_jobs, category, skills
+    )
+
+
+async def fetch_and_build_job_message(job, search_context="", category=""):
     """
     Fetch job details and build a complete message with all information.
     Returns the complete message string or None if auth fails.
@@ -248,6 +307,26 @@ async def fetch_and_build_job_message(job, search_context=""):
         job_msg += "\n```\n"
         job_msg += "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n"
 
+    # ── PAST WORK SECTION ──────────────────────────────────────────────────────
+    # Query the past_jobs corpus for matching entries from the same category.
+    # Shows top-2 by skill overlap so the reader can see relevant prior work.
+    if category:
+        try:
+            past_matches = await _fetch_relevant_past_jobs(category, job.get("skills", []))
+            if past_matches:
+                job_msg += "\n🗂 **Similar Past Work:**\n"
+                for pm in past_matches:
+                    title_str  = pm["title"][:45] + ("…" if len(pm["title"]) > 45 else "")
+                    skills_str = ", ".join(pm["skills"][:3])
+                    if len(pm["skills"]) > 3:
+                        skills_str += f" +{len(pm['skills']) - 3}"
+                    line = f"• **{title_str}** — `{skills_str}`"
+                    if pm.get("reference_url"):
+                        line += f" [▶]({pm['reference_url']})"
+                    job_msg += line + "\n"
+        except Exception as _pje:
+            print(f"[PastJobs] Non-fatal error building section: {_pje}")
+
     return job_msg
 
 
@@ -313,7 +392,7 @@ async def process_single_search(search):
             job_number = _save_job_to_db(job)
 
             # BUILD COMPLETE MESSAGE WITH ALL DETAILS
-            complete_message = await fetch_and_build_job_message(job, f"{search['keyword']}")
+            complete_message = await fetch_and_build_job_message(job, f"{search['keyword']}", category=search.get("category", ""))
             
             # Skip if auth failed
             if complete_message is None:
