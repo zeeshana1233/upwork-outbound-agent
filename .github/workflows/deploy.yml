@@ -28,6 +28,7 @@ jobs:
             cd C:\upwork-outbound-agent\whatsapp_bridge
             npm install --omit=dev --quiet
             cd C:\upwork-outbound-agent
+            python -m meridian.seeder --reset
             sc stop upwork-outbound-agent || echo Service was not running
             ping -n 5 127.0.0.1
             sc start upwork-outbound-agent
