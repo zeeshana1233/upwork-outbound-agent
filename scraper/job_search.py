@@ -229,6 +229,19 @@ async def make_graphql_request(scraper, payload, method_name):
                 print(f"Failed to parse JSON: {e}")
                 print(f"Response text: {response.text[:500]}")
                 return []
+        except (BrokenPipeError, ConnectionResetError, ConnectionError) as e:
+            # Stale keep-alive connection — recreate scraper session and retry
+            print(f"[Scraper] Connection dropped ({type(e).__name__}), recreating session and retrying...")
+            try:
+                import cloudscraper as _cloudscraper
+                scraper.scraper = _cloudscraper.create_scraper(
+                    browser={"browser": "chrome", "platform": "windows", "mobile": False}
+                )
+            except Exception as reinit_err:
+                print(f"[Scraper] Session recreate failed: {reinit_err}")
+            retry_count += 1
+            await asyncio.sleep(random.uniform(1, 3))
+            continue
         except Exception as e:
             print(f"Request failed: {e}")
             await asyncio.sleep(random.uniform(2, 5))
