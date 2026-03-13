@@ -20,72 +20,82 @@ ADVANCED_JOB_SEARCHES = [
         "keyword": "Mobile Farm",
         "query": "Mobile farm",
         "channel_id": 1359407667692572713,
-        "filters": {}
+        "filters": {},
+        "enabled": False
     },
     {
         "category": "Android Automation",
         "keyword": "Appium",
         "query": "Appium",
         "channel_id": 1359407667692572713,
-        "filters": {}
+        "filters": {},
+        "enabled": False
     },
     {
         "category": "Android Automation",
         "keyword": "iPhone Automation",
         "query": "Iphone Automation",
         "channel_id": 1359407667692572713,
-        "filters": {}
+        "filters": {},
+        "enabled": False
     },
     {
         "category": "Android Automation",
         "keyword": "Mobile Bot",
         "query": "title:(Mobile bot)",
         "channel_id": 1359407667692572713,
-        "filters": {}
+        "filters": {},
+        "enabled": False
     },
     {
         "category": "Android Automation",
         "keyword": "Phone Farm",
         "query": "phone farm",
         "channel_id": 1359407667692572713,
-        "filters": {}
+        "filters": {},
+        "enabled": False
     },
     {
         "category": "Android Automation",
         "keyword": "Android Device Automation",
         "query": "title:(android device automation)",
         "channel_id": 1359407667692572713,
-        "filters": {}
+        "filters": {},
+        "enabled": False
     },
     {
         "category": "Android Automation",
         "keyword": "Android Emulator",
         "query": "title:(android emulator)",
         "channel_id": 1359407667692572713,
-        "filters": {}
+        "filters": {},
+        "enabled": False
     },
     {
         "category": "Android Automation",
         "keyword": "ADB Automation",
         "query": "title:(ADB automation) OR description:(ADB automation)",
         "channel_id": 1359407667692572713,
-        "filters": {}
+        "filters": {},
+        "enabled": False
     },
     {
         "category": "Android Automation",
         "keyword": "Emulator Cluster",
         "query": "title:(emulator cluster) OR description:(emulator cluster)",
         "channel_id": 1359407667692572713,
-        "filters": {}
+        "filters": {},
+        "enabled": False
     },
     {
         "category": "Android Automation",
         "keyword": "GPS Emulation",
         "query": "title:(GPS emulation) OR description:(GPS emulation)",
         "channel_id": 1359407667692572713,
-        "filters": {}
+        "filters": {},
+        "enabled": False
     },
-        {
+    {
         "category": "Automation",
         "keyword": "Android Accessibility Service",
         "query": "Android Accessibility Service",
@@ -101,56 +111,64 @@ ADVANCED_JOB_SEARCHES = [
         "keyword": "Multilogin",
         "query": "title:(Multilogin) OR description:(Multilogin)",
         "channel_id": 1359040879121403965,
-        "filters": {}
+        "filters": {},
+        "enabled": False
     },
     {
         "category": "Stealth Automation",
         "keyword": "GoLogin",
         "query": "title:(GoLogin) OR description:(GoLogin)",
         "channel_id": 1359040879121403965,
-        "filters": {}
+        "filters": {},
+        "enabled": False
     },
     {
         "category": "Stealth Automation",
         "keyword": "Incognition",
         "query": "title:(Incognition) OR description:(Incognition)",
         "channel_id": 1359040879121403965,
-        "filters": {}
+        "filters": {},
+        "enabled": False
     },
     {
         "category": "Stealth Automation",
         "keyword": "AdsPower",
         "query": "title:(AdsPower) OR description:(AdsPower)",
         "channel_id": 1359040879121403965,
-        "filters": {}
+        "filters": {},
+        "enabled": False
     },
     {
         "category": "Stealth Automation",
         "keyword": "Dolphin Anty",
         "query": "title:(Dolphin Anty) OR description:(Dolphin Anty)",
         "channel_id": 1359040879121403965,
-        "filters": {}
+        "filters": {},
+        "enabled": False
     },
     {
         "category": "Stealth Automation",
         "keyword": "Browser Fingerprint",
         "query": 'title:("browser fingerprint") OR description:("browser fingerprint")',
         "channel_id": 1359040879121403965,
-        "filters": {}
+        "filters": {},
+        "enabled": False
     },
     {
         "category": "Stealth Automation",
         "keyword": "Antidetect Browser",
         "query": "title:(antidetect) OR description:(antidetect browser)",
         "channel_id": 1359040879121403965,
-        "filters": {}
+        "filters": {},
+        "enabled": False
     },
     {
         "category": "Stealth Automation",
         "keyword": "Residential Proxy",
         "query": "title:(residential proxy) OR description:(residential proxies)",
         "channel_id": 1359040879121403965,
-        "filters": {}
+        "filters": {},
+        "enabled": False
     },
 
 
@@ -391,35 +409,40 @@ ADVANCED_JOB_SEARCHES = [
         "keyword": "React / Next.js Developer",
         "query": "title:(React developer) OR title:(Next.js developer) OR title:(NextJS developer)",
         "channel_id": 1364551909251223594,
-        "filters": {}
+        "filters": {},
+        "enabled": False
     },
     {
         "category": "Web Development",
         "keyword": "Python Web Developer",
         "query": "title:(Django developer) OR title:(Flask developer) OR title:(Python web developer)",
         "channel_id": 1364551909251223594,
-        "filters": {}
+        "filters": {},
+        "enabled": False
     },
     {
         "category": "Web Development",
         "keyword": "Full Stack Developer",
         "query": "title:(full stack developer) OR title:(MERN developer) OR title:(fullstack developer)",
         "channel_id": 1364551909251223594,
-        "filters": {}
+        "filters": {},
+        "enabled": False
     },
     {
         "category": "Web Development",
         "keyword": "Node.js Developer",
         "query": "title:(Node.js developer) OR title:(NodeJS developer)",
         "channel_id": 1364551909251223594,
-        "filters": {}
+        "filters": {},
+        "enabled": False
     },
     {
         "category": "Web Development",
         "keyword": "FastAPI Developer",
         "query": "title:(FastAPI) OR description:(FastAPI developer)",
         "channel_id": 1364551909251223594,
-        "filters": {}
+        "filters": {},
+        "enabled": False
     },
 
     # ─── SCRAPING ────────────────────────────────────────────────────────────
