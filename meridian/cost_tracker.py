@@ -118,9 +118,9 @@ def flush_cycle_report() -> str:
         f"GPT calls: {scored}\n"
         f"Input tokens: {inp:,} | Output tokens: {out:,}\n"
         f"Cost: ${cost_usd:.4f} → ₨ {cost_pkr:.2f} PKR\n\n"
-        f"📊 This session: ₨ {session:.2f} PKR\n"
-        f"📈 All-time total: ₨ {alltime_pkr:.2f} PKR\n"
-        f"💳 Est. remaining: ₨ {remaining_pkr:.2f} PKR (~${remaining_usd:.2f})\n"
+        f"📊 This session: ₨ {session:.4f} PKR\n"
+        f"📈 All-time total: ₨ {alltime_pkr:.4f} PKR (${alltime_pkr / getattr(config, 'PKR_PER_USD', 280):.4f})\n"
+        f"💳 Est. remaining: ₨ {remaining_pkr:.2f} PKR (~${remaining_usd:.4f})\n"
         f"🔗 platform.openai.com/billing"
     )
 
