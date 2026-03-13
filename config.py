@@ -26,6 +26,7 @@ WA_GROUP_JID       = os.getenv("WA_GROUP_JID", "")
 PKR_PER_USD        = float(os.getenv("PKR_PER_USD", "280"))
 OPENAI_API_KEY     = os.getenv("OPENAI_API_KEY", "")
 OPENAI_MODEL       = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+OPENAI_CREDIT_USD  = float(os.getenv("OPENAI_CREDIT_USD", "5.00"))
 
 # ── MERIDIAN Discord notifications ──────────────────────────────────────────
 # Channel ID for #meridian-alerts — receives MERIDIAN match/skip, cost reports,

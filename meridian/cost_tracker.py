@@ -14,7 +14,6 @@ import config
 # Per-model pricing table (USD per 1M tokens)
 MODEL_PRICING = {
     "gpt-4o-mini": {"input": 0.150, "output": 0.600},
-    "gpt-4o":      {"input": 2.500, "output": 10.000},
 }
 DEFAULT_PRICING = {"input": 0.150, "output": 0.600}
 
@@ -107,6 +106,7 @@ def flush_cycle_report() -> str:
     # Persist and get all-time DB total
     _persist_to_db(scored, inp, out, cost_usd, cost_pkr, session)
     alltime_pkr = _get_alltime_total_pkr()
+    remaining_pkr, remaining_usd = _get_estimated_remaining(alltime_pkr)
 
     now_utc = datetime.datetime.utcnow().strftime("%H:%M UTC")
     model   = getattr(config, "OPENAI_MODEL", "gpt-4o-mini")
@@ -119,7 +119,9 @@ def flush_cycle_report() -> str:
         f"Input tokens: {inp:,} | Output tokens: {out:,}\n"
         f"Cost: ${cost_usd:.4f} → ₨ {cost_pkr:.2f} PKR\n\n"
         f"📊 This session: ₨ {session:.2f} PKR\n"
-        f"📈 All-time total: ₨ {alltime_pkr:.2f} PKR"
+        f"📈 All-time total: ₨ {alltime_pkr:.2f} PKR\n"
+        f"💳 Est. remaining: ₨ {remaining_pkr:.2f} PKR (~${remaining_usd:.2f})\n"
+        f"🔗 platform.openai.com/billing"
     )
 
 
@@ -134,6 +136,19 @@ def _get_alltime_total_pkr() -> float:
             return float(total or 0.0)
     except Exception:
         return _session_total_pkr
+
+
+def _get_estimated_remaining(alltime_pkr: float) -> tuple:
+    """
+    Return (remaining_pkr, remaining_usd) based on hardcoded credit minus all-time spend.
+    Uses OPENAI_CREDIT_USD from config and PKR_PER_USD exchange rate.
+    """
+    credit_usd  = getattr(config, "OPENAI_CREDIT_USD", 5.00)
+    rate        = getattr(config, "PKR_PER_USD", 280.0)
+    alltime_usd = alltime_pkr / rate
+    remaining_usd = max(0.0, credit_usd - alltime_usd)
+    remaining_pkr = remaining_usd * rate
+    return remaining_pkr, remaining_usd
 
 
 def _persist_to_db(jobs_scored, inp, out, cost_usd, cost_pkr, session_total):
