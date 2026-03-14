@@ -48,7 +48,8 @@ def _get_channel():
 
 def build_discord_match_message(job: dict, result: dict, category: str,
                                 cost_pkr: float = 0.0,
-                                job_number: int = 0) -> str:
+                                job_number: int = 0,
+                                past_matches: list = None) -> str:
     title       = job.get("title") or "Untitled"
     budget_raw  = job.get("budget")
     job_id      = job.get("id") or job.get("ciphertext") or ""
@@ -72,6 +73,19 @@ def build_discord_match_message(job: dict, result: dict, category: str,
 
     job_num_line = f"**Job #:** {job_number}  ·  Reply **agree {job_number}** to draft a proposal\n" if job_number and job_number > 0 else ""
 
+    # Build past work section
+    past_work_str = ""
+    if past_matches:
+        past_work_str = "\n🗂 **Similar Past Work:**\n"
+        for pm in past_matches:
+            title_str  = pm["title"][:45] + ("…" if len(pm["title"]) > 45 else "")
+            sk         = pm.get("skills", [])
+            skills_str2 = ", ".join(sk[:3]) + (f" +{len(sk) - 3}" if len(sk) > 3 else "")
+            line = f"• **{title_str}** — `{skills_str2}`"
+            if pm.get("reference_url"):
+                line += f" [▶]({pm['reference_url']})"
+            past_work_str += line + "\n"
+
     return (
         f"## 🎯 MERIDIAN MATCH — Score: {total}/100\n\n"
         f"**Title:** {title}\n"
@@ -84,11 +98,13 @@ def build_discord_match_message(job: dict, result: dict, category: str,
         f"Domain: {domain}/40  |  Clarity: {clarity}/25  |  Tech: {tech}/20  |  Budget: {budget_v}/15\n"
         f"Cost: ₨ {cost_pkr:.4f} PKR\n"
         f"```"
+        f"{past_work_str}"
     )
 
 
 def build_discord_skip_message(job: dict, result: dict, category: str,
-                               cost_pkr: float = 0.0) -> str:
+                               cost_pkr: float = 0.0,
+                               past_matches: list = None) -> str:
     title      = job.get("title") or "Untitled"
     budget_raw = job.get("budget")
     job_id     = job.get("id") or job.get("ciphertext") or ""
@@ -105,6 +121,19 @@ def build_discord_skip_message(job: dict, result: dict, category: str,
     reasoning = result.get("reasoning", "")
     threshold = getattr(config, "MERIDIAN_THRESHOLD", 60)
 
+    # Build past work section
+    past_work_str = ""
+    if past_matches:
+        past_work_str = "\n🗂 **Similar Past Work:**\n"
+        for pm in past_matches:
+            title_str  = pm["title"][:45] + ("…" if len(pm["title"]) > 45 else "")
+            sk         = pm.get("skills", [])
+            skills_str = ", ".join(sk[:3]) + (f" +{len(sk) - 3}" if len(sk) > 3 else "")
+            line = f"• **{title_str}** — `{skills_str}`"
+            if pm.get("reference_url"):
+                line += f" [▶]({pm['reference_url']})"
+            past_work_str += line + "\n"
+
     return (
         f"## ❌ MERIDIAN SKIP — Score: {total}/100 (threshold: {threshold})\n\n"
         f"**Title:** {title}\n"
@@ -115,6 +144,7 @@ def build_discord_skip_message(job: dict, result: dict, category: str,
         f"Domain: {domain}/40  |  Clarity: {clarity}/25  |  Tech: {tech}/20  |  Budget: {budget_v}/15\n"
         f"Cost: ₨ {cost_pkr:.4f} PKR\n"
         f"```"
+        f"{past_work_str}"
     )
 
 
@@ -188,15 +218,16 @@ async def send_to_meridian_channel(message: str) -> bool:
 async def send_meridian_discord(job: dict, result: dict, category: str,
                                 cost_pkr: float = 0.0,
                                 job_number: int = 0,
-                                verdict: str = "pass") -> bool:
+                                verdict: str = "pass",
+                                past_matches: list = None) -> bool:
     """
     Send MERIDIAN verdict (match or skip) to #meridian-alerts.
     verdict='pass' → match message, verdict='skip' → skip message.
     """
     if verdict == "pass":
-        msg = build_discord_match_message(job, result, category, cost_pkr, job_number)
+        msg = build_discord_match_message(job, result, category, cost_pkr, job_number, past_matches)
     else:
-        msg = build_discord_skip_message(job, result, category, cost_pkr)
+        msg = build_discord_skip_message(job, result, category, cost_pkr, past_matches)
     return await send_to_meridian_channel(msg)
 
 

@@ -307,26 +307,6 @@ async def fetch_and_build_job_message(job, search_context="", category=""):
         job_msg += "\n```\n"
         job_msg += "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n"
 
-    # ── PAST WORK SECTION ──────────────────────────────────────────────────────
-    # Query the past_jobs corpus for matching entries from the same category.
-    # Shows top-2 by skill overlap so the reader can see relevant prior work.
-    if category:
-        try:
-            past_matches = await _fetch_relevant_past_jobs(category, job.get("skills", []))
-            if past_matches:
-                job_msg += "\n🗂 **Similar Past Work:**\n"
-                for pm in past_matches:
-                    title_str  = pm["title"][:45] + ("…" if len(pm["title"]) > 45 else "")
-                    skills_str = ", ".join(pm["skills"][:3])
-                    if len(pm["skills"]) > 3:
-                        skills_str += f" +{len(pm['skills']) - 3}"
-                    line = f"• **{title_str}** — `{skills_str}`"
-                    if pm.get("reference_url"):
-                        line += f" [▶]({pm['reference_url']})"
-                    job_msg += line + "\n"
-        except Exception as _pje:
-            print(f"[PastJobs] Non-fatal error building section: {_pje}")
-
     return job_msg
 
 
@@ -428,12 +408,15 @@ async def process_single_search(search):
                         # Fires for BOTH pass and skip verdicts (fire-and-forget)
                         if _DISCORD_NOTIFIER_AVAILABLE:
                             _resolved_job_number = job_number if (job_number and job_number not in (-1, 0)) else 0
+                            # Fetch past job matches for this category to show in the MERIDIAN alert
+                            _past_matches = await _fetch_relevant_past_jobs(search["category"], job.get("skills", []))
                             asyncio.create_task(
                                 _dn_send_meridian(
                                     job, meridian_result, search["category"],
                                     cost_pkr=cost_pkr,
                                     job_number=_resolved_job_number,
                                     verdict=verdict,
+                                    past_matches=_past_matches,
                                 )
                             )
                     except Exception as _me:
